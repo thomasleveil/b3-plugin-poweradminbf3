@@ -1,0 +1,97 @@
+<configuration plugin="poweradminmoh">
+  <settings name="commands">
+    <!-- This section defines the level required to use the commands
+		    0 : guest
+		    1 : user
+		    2 : regular
+		    20 : moderator
+		    40 : admin
+		    60 : fulladmin
+		    80 : senioradmin
+		    100 : superadmin
+		-->
+		<!-- Also, you can define command aliases by adding it after the
+		command name, separating them with '-' -->
+
+    <set name="setmode-mode">60</set>
+
+    <set name="runnextround-nextrnd">40</set>
+    <set name="restartround-restartrnd">40</set>
+    <set name="kill">40</set>
+
+    <set name="changeteam">20</set>
+    <set name="swap">20</set>
+    <set name="setnextmap-snmap">20</set>
+  </settings>
+
+  <!--
+    Define below gamemode presets to be used by the !setmode command.
+
+    each preset name must start with 'gamemode_preset_' followed by the
+    identifier of the preset which will be used as an argument of the
+    !setmode command.
+  -->
+  <settings name="gamemode_preset_quickmatch">
+    <set name="roundStartPlayerCount">8</set>
+    <set name="roundRestartPlayerCount">4</set>
+  </settings>
+  <settings name="gamemode_preset_normal">
+    <set name="autoBalance">true</set>
+    <set name="friendlyFire">false</set>
+    <set name="killCam">true</set>
+    <set name="miniMap">true</set>
+    <set name="hud">true</set>
+    <set name="crossHair">true</set>
+    <set name="3dSpotting">true</set>
+    <set name="miniMapSpotting">true</set>
+    <set name="nameTag">true</set>
+    <set name="3pCam">true</set>
+    <set name="regenerateHealth">true</set>
+    <set name="vehicleSpawnAllowed">true</set>
+    <set name="vehicleSpawnDelay">100</set>
+    <set name="soldierHealth">100</set>
+    <set name="playerRespawnTime">100</set>
+    <set name="playerManDownTime">100</set>
+    <set name="bulletDamage">100</set>
+    <set name="onlySquadLeaderSpawn">false</set>
+  </settings>
+  <settings name="gamemode_preset_hardcore">
+    <set name="autoBalance">true</set>
+    <set name="friendlyFire">true</set>
+    <set name="killCam">false</set>
+    <set name="miniMap">true</set>
+    <set name="hud">false</set>
+    <set name="3dSpotting">false</set>
+    <set name="miniMapSpotting">true</set>
+    <set name="nameTag">false</set>
+    <set name="3pCam">false</set>
+    <set name="regenerateHealth">false</set>
+    <set name="vehicleSpawnAllowed">true</set>
+    <set name="vehicleSpawnDelay">60</set>
+    <set name="soldierHealth">100</set>
+    <set name="playerRespawnTime">100</set>
+    <set name="playerManDownTime">100</set>
+    <set name="bulletDamage">100</set>
+    <set name="onlySquadLeaderSpawn">true</set>
+  </settings>
+  <settings name="gamemode_preset_infantry">
+    <set name="autoBalance">true</set>
+    <set name="friendlyFire">false</set>
+    <set name="killCam">true</set>
+    <set name="miniMap">true</set>
+    <set name="hud">true</set>
+    <set name="crossHair">true</set>
+    <set name="3dSpotting">true</set>
+    <set name="miniMapSpotting">true</set>
+    <set name="nameTag">true</set>
+    <set name="3pCam">false</set>
+    <set name="regenerateHealth">true</set>
+    <set name="vehicleSpawnAllowed">false</set>
+    <set name="vehicleSpawnDelay">100</set>
+    <set name="soldierHealth">100</set>
+    <set name="playerRespawnTime">100</set>
+    <set name="playerManDownTime">100</set>
+    <set name="bulletDamage">100</set>
+    <set name="onlySquadLeaderSpawn">false</set>
+  </settings>
+</configuration>
