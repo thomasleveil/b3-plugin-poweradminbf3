@@ -20,7 +20,11 @@
 #
 # CHANGELOG
 #
-__version__ = '0.0'
+# 0.1 - add command !kill
+#
+from b3.parsers.frostbite2.protocol import CommandFailedError
+
+__version__ = '0.1'
 __author__  = 'Courgette'
 
 import b3
@@ -29,7 +33,7 @@ from b3.plugin import Plugin
 
 class Poweradminbf3Plugin(Plugin):
     def __init__(self, console, config=None):
-        Plugin.__init__(self. console. config)
+        Plugin.__init__(self, console, config)
         self._adminPlugin = None
 
     def _getCmd(self, cmd):
@@ -99,10 +103,28 @@ class Poweradminbf3Plugin(Plugin):
 
     def cmd_kill(self, data, client, cmd=None):
         """\
-        <player> Kill a player without scoring effects
+        <player> [reason] - Kill a player without scoring effects
         """
-        raise NotImplementedError
-
+        # this will split the player name and the message
+        name, reason = self._adminPlugin.parseUserCmd(data)
+        if name:
+            sclient = self._adminPlugin.findClientPrompt(name, client)
+            if not sclient:
+                # a player matching the name was not found, a list of closest matches will be displayed
+                # we can exit here and the user will retry with a more specific player
+                return
+            else:
+                try:
+                    self.console.write(('admin.killPlayer', sclient.cid))
+                    if reason:
+                        sclient.message("Kill reason: %s" % reason)
+                    else:
+                        sclient.message("Killed by admin")
+                except CommandFailedError, err:
+                    if err.message[0] == "SoldierNotAlive":
+                        client.message("%s is already dead" % sclient.name)
+                    else:
+                        client.message('Error: %s' % err.message)
 
     def cmd_changeteam(self, data, client, cmd=None):
         """\
