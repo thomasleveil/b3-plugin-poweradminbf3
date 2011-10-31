@@ -23,7 +23,10 @@
     <set name="swap">20</set>
     <set name="setnextmap-snmap">20</set>
   </settings>
-
+  <settings name="messages">
+    <set name="operation_denied">Operation denied</set>
+    <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
+  </settings>
   <!--
     Define below gamemode presets to be used by the !setmode command.
 

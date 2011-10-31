@@ -23,10 +23,13 @@
 # 0.1 - add command !kill
 # 0.2 - add commands !roundrestart and !roundnext
 # 0.3 - add commands !changeteam and !swap
+# 0.4 - commands !kill, !changeteam, !swap won't act on an admin of higher level
+#
+from ConfigParser import NoOptionError
 import time
 from b3.parsers.frostbite2.protocol import CommandFailedError
 
-__version__ = '0.3'
+__version__ = '0.4'
 __author__  = 'Courgette'
 
 import b3
@@ -50,7 +53,17 @@ class Poweradminbf3Plugin(Plugin):
         This is called after loadConfig(). Any plugin private variables loaded
         from the config need to be reset here.
         """
-        pass
+
+        # initialize messages
+        try:
+            self.getMessage('operation_denied_level')
+        except NoOptionError:
+            self._messages['operation_denied_level'] = "Operation denied because %(name)s is in the %(group)s group"
+        try:
+            self.getMessage('operation_denied')
+        except NoOptionError:
+            self._messages['operation_denied'] = "Operation denied"
+
 
     def startup(self):
         """\
@@ -111,6 +124,11 @@ class Poweradminbf3Plugin(Plugin):
                 # a player matching the name was not found, a list of closest matches will be displayed
                 # we can exit here and the user will retry with a more specific player
                 return
+            elif sclient.maxLevel >= client.maxLevel:
+                if sclient.maxGroup:
+                    client.message(self.getMessage('operation_denied_level', {'name': sclient.name, 'group': sclient.maxGroup.name}))
+                else:
+                    client.message(self.getMessage('operation_denied'))
             else:
                 try:
                     self.console.write(('admin.killPlayer', sclient.cid))
@@ -133,7 +151,16 @@ class Poweradminbf3Plugin(Plugin):
             client.message('Invalid data, try !help changeteam')
         else:
             sclient = self._adminPlugin.findClientPrompt(name, client)
-            if sclient:
+            if not sclient:
+                # a player matching the name was not found, a list of closest matches will be displayed
+                # we can exit here and the user will retry with a more specific player
+                return
+            elif sclient.maxLevel >= client.maxLevel:
+                if sclient.maxGroup:
+                    client.message(self.getMessage('operation_denied_level', {'name': sclient.name, 'group': sclient.maxGroup.name}))
+                else:
+                    client.message(self.getMessage('operation_denied'))
+            else:
                 newteam = '2' if sclient.teamId == 1 else '1'
                 try:
                     self.console.write(('admin.movePlayer', sclient.cid, newteam, 0, 'true'))
@@ -169,6 +196,21 @@ class Poweradminbf3Plugin(Plugin):
         sclientB = self._adminPlugin.findClientPrompt(pB, client)
         if not sclientB:
             return
+
+        # check if client A and client B are in lower or equal groups
+        if client.maxLevel < sclientA.maxLevel:
+            if sclientA.maxGroup:
+                client.message(self.getMessage('operation_denied_level', {'name': sclientA.name, 'group': sclientA.maxGroup.name}))
+            else:
+                client.message(self.getMessage('operation_denied'))
+            return
+        if client.maxLevel < sclientB.maxLevel:
+            if sclientB.maxGroup:
+                client.message(self.getMessage('operation_denied_level', {'name': sclientB.name, 'group': sclientB.maxGroup.name}))
+            else:
+                client.message(self.getMessage('operation_denied'))
+            return
+
 
         if sclientA.teamId not in (1, 2) and sclientB.teamId not in (1, 2):
             client.message('could not determine players teams')

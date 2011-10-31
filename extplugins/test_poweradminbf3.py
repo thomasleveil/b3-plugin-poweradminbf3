@@ -119,27 +119,52 @@ conf.loadFromString("""
 """)
 
 p = Poweradminbf3Plugin(fakeConsole, conf)
+p.onLoadConfig()
 p.onStartup()
 
+simon.connects("simon")
+simon.teamId = 1
+simon.squad = 7
 joe.connects('Joe')
 joe.teamId = 1
 joe.squad = 7
-print 'joe.guid: %s' % joe.guid
 superadmin.connects('superadmin')
 superadmin.teamId = 2
 superadmin.squad = 6
-print 'superadmin.guid: %s' % superadmin.guid
+moderator.connects('moderator')
+moderator.teamId = 2
+moderator.squad = 5
+print "Joe's group is " +  joe.maxGroup.name
+print "Simon's group is " + simon.maxGroup.name
+print "Moderator's group is " + moderator.maxGroup.name
+print "superadmin's group is " +  superadmin.maxGroup.name
 
+print "#"*80 ###################################### test basic commands
 superadmin.says("!roundnext")
 superadmin.says("!roundrestart")
-superadmin.says("!changeteam joe")
 
-print "#"*80
+print "#"*80 ###################################### test !kill
+superadmin.says("!changeteam joe")
+p._adminPlugin._commands["changeteam"].level = 0,100
+joe.says("!changeteam god")
+joe.says("!changeteam simon")
+
+print "#"*80 ###################################### test !kill
+superadmin.says("!kill joe")
+p._adminPlugin._commands["kill"].level = 0,100
+joe.says("!kill god")
+joe.says("!kill simon")
+
+
+print "#"*80 ###################################### test !swap
+superadmin.teamId = 2
+superadmin.squad = 6
 print "superadmin.teamId: %s, squad: %s" % (superadmin.teamId, superadmin.squad)
+joe.teamId = 1
+joe.squad = 7
 print "joe.teamId: %s, squad: %s" % (joe.teamId, joe.squad)
 superadmin.says('!swap joe')
 
-simon.connects("simon")
 simon.teamId = 1
 simon.squad = 6
 joe.teamId = 1
@@ -148,3 +173,8 @@ superadmin.says("!swap joe simon")
 
 joe.squad = 2
 superadmin.says("!swap joe simon")
+
+# test groups
+p._adminPlugin._commands["swap"].level = 0,100
+simon.says("!swap moderator")
+moderator.says("!swap simon god")
