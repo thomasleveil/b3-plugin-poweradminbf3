@@ -22,10 +22,11 @@
 #
 # 0.1 - add command !kill
 # 0.2 - add commands !roundrestart and !roundnext
+# 0.3 - add commands !changeteam and !swap
 import time
 from b3.parsers.frostbite2.protocol import CommandFailedError
 
-__version__ = '0.2'
+__version__ = '0.3'
 __author__  = 'Courgette'
 
 import b3
