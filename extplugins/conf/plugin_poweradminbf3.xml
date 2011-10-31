@@ -1,4 +1,4 @@
-<configuration plugin="poweradminmoh">
+<configuration plugin="poweradminbf3">
   <settings name="commands">
     <!-- This section defines the level required to use the commands
 		    0 : guest
