@@ -24,6 +24,7 @@ Commands
 !roundrestart - Restart current round
 !kill <player> [reason] - Kill a player without scoring effects
 !changeteam <player> - move <player> to the other team
+!swap <player A> [<player B>] - swap player A's team/squad with player B's team/squad
 
 
 Support

@@ -37,26 +37,6 @@ class Poweradminbf3Plugin(Plugin):
         Plugin.__init__(self, console, config)
         self._adminPlugin = None
 
-    def _getCmd(self, cmd):
-        cmd = 'cmd_%s' % cmd
-        if hasattr(self, cmd):
-            func = getattr(self, cmd)
-            return func
-        return None
-
-    def _registerCommands(self):
-        # register our commands
-        if 'commands' in self.config.sections():
-            for cmd in self.config.options('commands'):
-                level = self.config.get('commands', cmd)
-                sp = cmd.split('-')
-                alias = None
-                if len(sp) == 2:
-                    cmd, alias = sp
-                func = self._getCmd(cmd)
-                if func:
-                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
-
 
 ################################################################################################################
 #
@@ -165,7 +145,51 @@ class Poweradminbf3Plugin(Plugin):
         """\
         <player A> [<player B>] - swap teams for player A and B if they are in different teams or squads
         """
-        raise NotImplementedError
+        # player A's name
+        pA, otherparams = self._adminPlugin.parseUserCmd(data)
+        if not pA:
+            client.message('Invalid data, try !help swap')
+            return
+
+        if len(pA)==1 or otherparams is None:
+            # assumes pB is the player that use the command
+            otherparams = client.name
+
+        # player B's name
+        pB, otherparams2 = self._adminPlugin.parseUserCmd(otherparams)
+        if not pB:
+            client.message('Invalid data, try !help swap')
+            return
+
+        # get client object for player A and B
+        sclientA = self._adminPlugin.findClientPrompt(pA, client)
+        if not sclientA:
+            return
+        sclientB = self._adminPlugin.findClientPrompt(pB, client)
+        if not sclientB:
+            return
+
+        if sclientA.teamId not in (1, 2) and sclientB.teamId not in (1, 2):
+            client.message('could not determine players teams')
+            return
+        if sclientA.teamId == sclientB.teamId and sclientA.squad == sclientB.squad:
+            client.message('both players are in the same team and squad. Cannot swap')
+            return
+
+        teamA, teamB = sclientA.teamId, sclientB.teamId
+        squadA, squadB = sclientA.squad, sclientB.squad
+
+        # move player A to teamB/NO_SQUAD
+        self._movePlayer(sclientA, teamB)
+
+        # move player B to teamA/squadA
+        self._movePlayer(sclientB, teamA, squadA)
+
+        # move player A to teamB/squadB if squadB != 0
+        if squadB:
+            self._movePlayer(sclientA, teamB, squadB)
+
+        cmd.sayLoudOrPM(client, 'swapped player %s with %s' % (sclientA.cid, sclientB.cid))
 
 
     def cmd_setnextmap(self, data, client=None, cmd=None):
@@ -179,3 +203,40 @@ class Poweradminbf3Plugin(Plugin):
         <preset> - Change mode to given preset (normal, hardcore, infantry, ...)
         """
         raise NotImplementedError
+
+
+
+
+
+################################################################################################################
+#
+#    Other methods
+#
+################################################################################################################
+
+    def _getCmd(self, cmd):
+        cmd = 'cmd_%s' % cmd
+        if hasattr(self, cmd):
+            func = getattr(self, cmd)
+            return func
+        return None
+
+    def _registerCommands(self):
+        # register our commands
+        if 'commands' in self.config.sections():
+            for cmd in self.config.options('commands'):
+                level = self.config.get('commands', cmd)
+                sp = cmd.split('-')
+                alias = None
+                if len(sp) == 2:
+                    cmd, alias = sp
+                func = self._getCmd(cmd)
+                if func:
+                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+
+    def _movePlayer(self, client, teamId, squadId=0):
+        try:
+            client.setvar(self, 'movedByBot', True)
+            self.console.write(('admin.movePlayer', client.cid, teamId, squadId, 'true'))
+        except CommandFailedError, err:
+            self.warning('Error, server replied %s' % err)

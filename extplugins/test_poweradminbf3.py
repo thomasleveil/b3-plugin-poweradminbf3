@@ -123,11 +123,28 @@ p.onStartup()
 
 joe.connects('Joe')
 joe.teamId = 1
+joe.squad = 7
 print 'joe.guid: %s' % joe.guid
 superadmin.connects('superadmin')
-superadmin.teamId = 1
+superadmin.teamId = 2
+superadmin.squad = 6
 print 'superadmin.guid: %s' % superadmin.guid
 
 superadmin.says("!roundnext")
 superadmin.says("!roundrestart")
 superadmin.says("!changeteam joe")
+
+print "#"*80
+print "superadmin.teamId: %s, squad: %s" % (superadmin.teamId, superadmin.squad)
+print "joe.teamId: %s, squad: %s" % (joe.teamId, joe.squad)
+superadmin.says('!swap joe')
+
+simon.connects("simon")
+simon.teamId = 1
+simon.squad = 6
+joe.teamId = 1
+joe.squad = 6
+superadmin.says("!swap joe simon")
+
+joe.squad = 2
+superadmin.says("!swap joe simon")
