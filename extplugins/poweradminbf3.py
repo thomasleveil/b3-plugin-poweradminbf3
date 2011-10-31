@@ -21,10 +21,11 @@
 # CHANGELOG
 #
 # 0.1 - add command !kill
-#
+# 0.2 - add commands !roundrestart and !roundnext
+import time
 from b3.parsers.frostbite2.protocol import CommandFailedError
 
-__version__ = '0.1'
+__version__ = '0.2'
 __author__  = 'Courgette'
 
 import b3
@@ -88,18 +89,28 @@ class Poweradminbf3Plugin(Plugin):
 #   Commands implementations
 #
 
-    def cmd_runnextround(self, data, client, cmd=None):
+    def cmd_roundnext(self, data, client, cmd=None):
         """\
         Switch to next round, without ending current
         """
-        raise NotImplementedError
+        self.console.say('forcing next round')
+        time.sleep(1)
+        try:
+            self.console.write(('mapList.runNextRound',))
+        except CommandFailedError, err:
+            client.message('Error: %s' % err.message)
 
 
-    def cmd_restartround(self, data, client, cmd=None):
+    def cmd_roundrestart(self, data, client, cmd=None):
         """\
         Restart current round
         """
-        raise NotImplementedError
+        self.console.say('Restart current round')
+        time.sleep(1)
+        try:
+            self.console.write(('mapList.restartRound',))
+        except CommandFailedError, err:
+            client.message('Error: %s' % err.message)
 
     def cmd_kill(self, data, client, cmd=None):
         """\
