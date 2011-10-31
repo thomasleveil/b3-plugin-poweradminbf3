@@ -57,9 +57,13 @@ class Poweradminbf3Plugin(Plugin):
                 if func:
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
+
+################################################################################################################
 #
 #    Parser interface implementation
 #
+################################################################################################################
+
     def onLoadConfig(self):
         """\
         This is called after loadConfig(). Any plugin private variables loaded
@@ -85,9 +89,11 @@ class Poweradminbf3Plugin(Plugin):
         """
         pass
 
+################################################################################################################
 #
 #   Commands implementations
 #
+################################################################################################################
 
     def cmd_roundnext(self, data, client, cmd=None):
         """\
@@ -141,7 +147,18 @@ class Poweradminbf3Plugin(Plugin):
         """\
         <name> - change a player to the other team
         """
-        raise NotImplementedError
+        name, reason = self._adminPlugin.parseUserCmd(data)
+        if not name:
+            client.message('Invalid data, try !help changeteam')
+        else:
+            sclient = self._adminPlugin.findClientPrompt(name, client)
+            if sclient:
+                newteam = '2' if sclient.teamId == 1 else '1'
+                try:
+                    self.console.write(('admin.movePlayer', sclient.cid, newteam, 0, 'true'))
+                    cmd.sayLoudOrPM(client, '%s forced from team %s to team %s' % (sclient.cid, sclient.teamId, newteam))
+                except CommandFailedError, err:
+                    client.message('Error, server replied %s' % err)
 
 
     def cmd_swap(self, data, client, cmd=None):

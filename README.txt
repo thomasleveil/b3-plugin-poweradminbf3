@@ -23,6 +23,7 @@ Commands
 !roundnext - Switch to next round, without ending current
 !roundrestart - Restart current round
 !kill <player> [reason] - Kill a player without scoring effects
+!changeteam <player> - move <player> to the other team
 
 
 Support
