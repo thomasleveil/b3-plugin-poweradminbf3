@@ -105,6 +105,7 @@ conf = XmlConfigParser()
 conf.loadFromString("""
 <configuration plugin="poweradminbf3">
   <settings name="commands">
+    <set name="punkbuster-pb">100</set>
     <set name="setmode-mode">60</set>
 
     <set name="roundnext-rnext">40</set>
@@ -142,6 +143,9 @@ print "superadmin's group is " +  superadmin.maxGroup.name
 print "#"*80 ###################################### test basic commands
 superadmin.says("!roundnext")
 superadmin.says("!roundrestart")
+superadmin.says("!punkbuster")
+superadmin.says("!punkbuster some command")
+
 
 print "#"*80 ###################################### test !kill
 superadmin.says("!changeteam joe")

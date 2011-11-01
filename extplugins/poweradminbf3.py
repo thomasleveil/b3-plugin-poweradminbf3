@@ -235,6 +235,29 @@ class Poweradminbf3Plugin(Plugin):
         cmd.sayLoudOrPM(client, 'swapped player %s with %s' % (sclientA.cid, sclientB.cid))
 
 
+    def cmd_punkbuster(self, data, client, cmd=None):
+        """\
+        <punkbuster command> - Execute a punkbuster command
+        """
+        if not data:
+            client.message('missing paramter, try !help punkbuster')
+        else:
+            try:
+                isPbActive = self.console.write(('punkBuster.isActive',))
+                if isPbActive and len(isPbActive) and isPbActive[0] == 'false':
+                    client.message('Punkbuster is not active')
+                    return
+            except CommandFailedError, err:
+                self.error(err)
+
+            self.debug('Executing punkbuster command = [%s]', data)
+            try:
+                response = self.console.write(('punkBuster.pb_sv_command', '%s' % data))
+            except CommandFailedError, err:
+                self.error(err)
+                client.message('Error: %s' % err.message)
+
+
     def cmd_setnextmap(self, data, client=None, cmd=None):
         """\
         <mapname> - Set the nextmap (partial map name works)

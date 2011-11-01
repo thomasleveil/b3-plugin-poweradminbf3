@@ -10,10 +10,14 @@
               80 : senioradmin
               100 : superadmin
           -->
-        <!-- Also, you can define command aliases by adding it after the
-          command name, separating them with '-' -->
+        <!-- Also, you can define command aliases by adding it after the command name, separating them with '-'.
+            For example if you want to use !ct instead of !changeteam, use the name "changeteam-ct" when
+            defining the command level below.
+          -->
 
-        <set name="setmode-mode">60</set>
+        <set name="punkbuster-pb">100</set>
+
+        <set name="setmode">60</set>
 
         <set name="roundnext-rnext">40</set>
         <set name="roundrestart-rrestart">40</set>
@@ -24,6 +28,9 @@
         <set name="setnextmap-snmap">20</set>
     </settings>
     <settings name="messages">
+        <!--
+            In this section you can customize some of the messages displayed to users.
+        -->
         <set name="operation_denied">Operation denied</set>
         <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
     </settings>
