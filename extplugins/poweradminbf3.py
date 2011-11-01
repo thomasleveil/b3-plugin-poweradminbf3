@@ -56,7 +56,7 @@ class Poweradminbf3Plugin(Plugin):
 
         # initialize messages
         try:
-            self.getMessage('operation_denied_level')
+            self.getMessage('operation_denied_level', {'name': '', 'group': ''})
         except NoOptionError:
             self._messages['operation_denied_level'] = "Operation denied because %(name)s is in the %(group)s group"
         try:
