@@ -28,6 +28,7 @@
 from ConfigParser import NoOptionError
 import time
 from b3.parsers.frostbite2.protocol import CommandFailedError
+from b3.parsers.frostbite2.util import MapListBlock
 
 __version__ = '0.4'
 __author__  = 'Courgette'
@@ -262,7 +263,53 @@ class Poweradminbf3Plugin(Plugin):
         """\
         <mapname> - Set the nextmap (partial map name works)
         """
-        raise NotImplementedError
+        if not data:
+            client.message('Invalid or missing data, try !help setnextmap')
+        else:
+            match = self.console.getMapsSoundingLike(data)
+            if len(match) > 1:
+                client.message('do you mean : %s ?' % ', '.join(match))
+                return
+            if len(match) == 1:
+                map_id = match[0]
+
+                maplist = MapListBlock(self.console.write(('mapList.list',)))
+                if not len(maplist):
+                    # maplist is empty, fix this situation by loading save mapList from disk
+                    try:
+                        self.console.write(('mapList.load',))
+                    except Exception, err:
+                        self.warning(err)
+                    maplist = MapListBlock(self.console.write(('mapList.list',)))
+
+                current_max_rounds = self.console.write(('mapList.getRounds',))[1]
+                if not len(maplist):
+                    # maplist is still empty, nextmap will be inserted at index 0
+                    self.console.write(('mapList.add', map_id, self.console.game.gameType, current_max_rounds, 0))
+                    self.console.write(('mapList.setNextMapIndex', 0))
+                else:
+                    current_map_index = int(self.console.write(('mapList.getMapIndices', ))[0])
+                    matching_maps = maplist.getByName(map_id)
+                    if not len(matching_maps):
+                        # then insert wanted map in rotation list
+                        next_map_index = current_map_index + 1
+                        self.console.write(('mapList.add', map_id, self.console.game.gameType, current_max_rounds, next_map_index))
+                        self.console.write(('mapList.setNextMapIndex', next_map_index))
+                    elif len(matching_maps) == 1:
+                        # easy case, just set the nextLevelIndex to the index found
+                        self.console.write(('mapList.setNextMapIndex', matching_maps.keys()[0]))
+                    else:
+                        # multiple matches :s
+                        matching_indices = matching_maps.keys()
+                        # try to find the next indice after the index of the current map
+                        indices_after_current = [x for x in matching_indices if x > current_map_index]
+                        if len(indices_after_current):
+                            next_map_index = indices_after_current[0]
+                        else:
+                            next_map_index = matching_indices[0]
+                        self.console.write(('mapList.setNextMapIndex', next_map_index))
+                if client:
+                    cmd.sayLoudOrPM(client, 'next map set to %s' % self.console.getEasyName(map_id))
 
     def cmd_setmode(self, data, client=None, cmd=None):
         """\

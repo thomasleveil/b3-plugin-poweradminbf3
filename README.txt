@@ -25,6 +25,7 @@ Commands
 !kill <player> [reason] - Kill a player without scoring effects
 !changeteam <player> - move <player> to the other team
 !swap <player A> [<player B>] - swap player A's team/squad with player B's team/squad
+!setnextmap <map partial name> - select the next map to load after current round
 
 
 Support

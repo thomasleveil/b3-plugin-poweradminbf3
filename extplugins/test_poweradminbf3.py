@@ -101,11 +101,99 @@ def printTeams():
 from poweradminbf3 import Poweradminbf3Plugin
 from b3.config import XmlConfigParser
 
-conf = XmlConfigParser()
-conf.loadFromString("""
+def test_1():
+    conf = XmlConfigParser()
+    conf.loadFromString("""
+    <configuration plugin="poweradminbf3">
+      <settings name="commands">
+        <set name="punkbuster-pb">100</set>
+        <set name="setmode-mode">60</set>
+
+        <set name="roundnext-rnext">40</set>
+        <set name="roundrestart-rrestart">40</set>
+        <set name="kill">40</set>
+
+        <set name="changeteam">20</set>
+        <set name="swap">20</set>
+        <set name="setnextmap-snmap">20</set>
+      </settings>
+    </configuration>
+    """)
+
+    p = Poweradminbf3Plugin(fakeConsole, conf)
+    p.onLoadConfig()
+    p.onStartup()
+
+    simon.connects("simon")
+    simon.teamId = 1
+    simon.squad = 7
+    joe.connects('Joe')
+    joe.teamId = 1
+    joe.squad = 7
+    superadmin.connects('superadmin')
+    superadmin.teamId = 2
+    superadmin.squad = 6
+    moderator.connects('moderator')
+    moderator.teamId = 2
+    moderator.squad = 5
+    print "Joe's group is " +  joe.maxGroup.name
+    print "Simon's group is " + simon.maxGroup.name
+    print "Moderator's group is " + moderator.maxGroup.name
+    print "superadmin's group is " +  superadmin.maxGroup.name
+
+    print "#"*80 ###################################### test basic commands
+    superadmin.says("!roundnext")
+    superadmin.says("!roundrestart")
+    superadmin.says("!punkbuster")
+    superadmin.says("!punkbuster some command")
+
+
+    print "#"*80 ###################################### test !kill
+    superadmin.says("!changeteam joe")
+    p._adminPlugin._commands["changeteam"].level = 0,100
+    joe.says("!changeteam god")
+    joe.says("!changeteam simon")
+
+    print "#"*80 ###################################### test !kill
+    superadmin.says("!kill joe")
+    p._adminPlugin._commands["kill"].level = 0,100
+    joe.says("!kill god")
+    joe.says("!kill simon")
+
+
+    print "#"*80 ###################################### test !swap
+    superadmin.teamId = 2
+    superadmin.squad = 6
+    print "superadmin.teamId: %s, squad: %s" % (superadmin.teamId, superadmin.squad)
+    joe.teamId = 1
+    joe.squad = 7
+    print "joe.teamId: %s, squad: %s" % (joe.teamId, joe.squad)
+    superadmin.says('!swap joe')
+
+    simon.teamId = 1
+    simon.squad = 6
+    joe.teamId = 1
+    joe.squad = 6
+    superadmin.says("!swap joe simon")
+
+    joe.squad = 2
+    superadmin.says("!swap joe simon")
+
+    # test groups
+    p._adminPlugin._commands["swap"].level = 0,100
+    simon.says("!swap moderator")
+    moderator.says("!swap simon god")
+
+
+    print "#"*80 ###################################### test !setnextmap
+    superadmin.says('!snmap')
+    import mock
+
+def test_bug_getmessage():
+    conf = XmlConfigParser()
+    conf.loadFromString("""
 <configuration plugin="poweradminbf3">
   <settings name="commands">
-    <set name="punkbuster-pb">100</set>
     <set name="setmode-mode">60</set>
 
     <set name="roundnext-rnext">40</set>
@@ -116,69 +204,15 @@ conf.loadFromString("""
     <set name="swap">20</set>
     <set name="setnextmap-snmap">20</set>
   </settings>
+  <settings name="messages">
+    <set name="operation_denied">Operation denied</set>
+    <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
+  </settings>
 </configuration>
-""")
+    """)
 
-p = Poweradminbf3Plugin(fakeConsole, conf)
-p.onLoadConfig()
-p.onStartup()
+    p = Poweradminbf3Plugin(fakeConsole, conf)
+    p.onLoadConfig()
+    p.onStartup()
 
-simon.connects("simon")
-simon.teamId = 1
-simon.squad = 7
-joe.connects('Joe')
-joe.teamId = 1
-joe.squad = 7
-superadmin.connects('superadmin')
-superadmin.teamId = 2
-superadmin.squad = 6
-moderator.connects('moderator')
-moderator.teamId = 2
-moderator.squad = 5
-print "Joe's group is " +  joe.maxGroup.name
-print "Simon's group is " + simon.maxGroup.name
-print "Moderator's group is " + moderator.maxGroup.name
-print "superadmin's group is " +  superadmin.maxGroup.name
-
-print "#"*80 ###################################### test basic commands
-superadmin.says("!roundnext")
-superadmin.says("!roundrestart")
-superadmin.says("!punkbuster")
-superadmin.says("!punkbuster some command")
-
-
-print "#"*80 ###################################### test !kill
-superadmin.says("!changeteam joe")
-p._adminPlugin._commands["changeteam"].level = 0,100
-joe.says("!changeteam god")
-joe.says("!changeteam simon")
-
-print "#"*80 ###################################### test !kill
-superadmin.says("!kill joe")
-p._adminPlugin._commands["kill"].level = 0,100
-joe.says("!kill god")
-joe.says("!kill simon")
-
-
-print "#"*80 ###################################### test !swap
-superadmin.teamId = 2
-superadmin.squad = 6
-print "superadmin.teamId: %s, squad: %s" % (superadmin.teamId, superadmin.squad)
-joe.teamId = 1
-joe.squad = 7
-print "joe.teamId: %s, squad: %s" % (joe.teamId, joe.squad)
-superadmin.says('!swap joe')
-
-simon.teamId = 1
-simon.squad = 6
-joe.teamId = 1
-joe.squad = 6
-superadmin.says("!swap joe simon")
-
-joe.squad = 2
-superadmin.says("!swap joe simon")
-
-# test groups
-p._adminPlugin._commands["swap"].level = 0,100
-simon.says("!swap moderator")
-moderator.says("!swap simon god")
+test_bug_getmessage()
