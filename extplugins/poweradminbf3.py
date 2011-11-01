@@ -24,13 +24,13 @@
 # 0.2 - add commands !roundrestart and !roundnext
 # 0.3 - add commands !changeteam and !swap
 # 0.4 - commands !kill, !changeteam, !swap won't act on an admin of higher level
-#
+# 0.5 - add commands !punkbuster and !setnextmap. Fix bug in 0.4
 from ConfigParser import NoOptionError
 import time
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock
 
-__version__ = '0.4'
+__version__ = '0.5'
 __author__  = 'Courgette'
 
 import b3
