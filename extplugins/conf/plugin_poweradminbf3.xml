@@ -17,7 +17,7 @@
 
         <set name="punkbuster-pb">100</set>
 
-        <set name="setmode">60</set>
+        <set name="loadconfig">60</set>
 
         <set name="roundnext-rnext">40</set>
         <set name="roundrestart-rrestart">40</set>
@@ -35,73 +35,9 @@
         <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
     </settings>
     <!--
-      Define below gamemode presets to be used by the !setmode command.
-
-      each preset name must start with 'gamemode_preset_' followed by the
-      identifier of the preset which will be used as an argument of the
-      !setmode command.
+      Define below the path to the preset bf3 server config files to be used by the !loadconfig command.
     -->
-    <settings name="gamemode_preset_quickmatch">
-        <set name="roundStartPlayerCount">8</set>
-        <set name="roundRestartPlayerCount">4</set>
-    </settings>
-    <settings name="gamemode_preset_normal">
-        <set name="autoBalance">true</set>
-        <set name="friendlyFire">false</set>
-        <set name="killCam">true</set>
-        <set name="miniMap">true</set>
-        <set name="hud">true</set>
-        <set name="crossHair">true</set>
-        <set name="3dSpotting">true</set>
-        <set name="miniMapSpotting">true</set>
-        <set name="nameTag">true</set>
-        <set name="3pCam">true</set>
-        <set name="regenerateHealth">true</set>
-        <set name="vehicleSpawnAllowed">true</set>
-        <set name="vehicleSpawnDelay">100</set>
-        <set name="soldierHealth">100</set>
-        <set name="playerRespawnTime">100</set>
-        <set name="playerManDownTime">100</set>
-        <set name="bulletDamage">100</set>
-        <set name="onlySquadLeaderSpawn">false</set>
-    </settings>
-    <settings name="gamemode_preset_hardcore">
-        <set name="autoBalance">true</set>
-        <set name="friendlyFire">true</set>
-        <set name="killCam">false</set>
-        <set name="miniMap">true</set>
-        <set name="hud">false</set>
-        <set name="3dSpotting">false</set>
-        <set name="miniMapSpotting">true</set>
-        <set name="nameTag">false</set>
-        <set name="3pCam">false</set>
-        <set name="regenerateHealth">false</set>
-        <set name="vehicleSpawnAllowed">true</set>
-        <set name="vehicleSpawnDelay">60</set>
-        <set name="soldierHealth">100</set>
-        <set name="playerRespawnTime">100</set>
-        <set name="playerManDownTime">100</set>
-        <set name="bulletDamage">100</set>
-        <set name="onlySquadLeaderSpawn">true</set>
-    </settings>
-    <settings name="gamemode_preset_infantry">
-        <set name="autoBalance">true</set>
-        <set name="friendlyFire">false</set>
-        <set name="killCam">true</set>
-        <set name="miniMap">true</set>
-        <set name="hud">true</set>
-        <set name="crossHair">true</set>
-        <set name="3dSpotting">true</set>
-        <set name="miniMapSpotting">true</set>
-        <set name="nameTag">true</set>
-        <set name="3pCam">false</set>
-        <set name="regenerateHealth">true</set>
-        <set name="vehicleSpawnAllowed">false</set>
-        <set name="vehicleSpawnDelay">100</set>
-        <set name="soldierHealth">100</set>
-        <set name="playerRespawnTime">100</set>
-        <set name="playerManDownTime">100</set>
-        <set name="bulletDamage">100</set>
-        <set name="onlySquadLeaderSpawn">false</set>
-    </settings>
+	<settings name="configs">
+		<set name="path">@b3/extplugins/conf/serverconfigs/</set>
+	</settings>
 </configuration>
