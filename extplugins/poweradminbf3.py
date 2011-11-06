@@ -25,8 +25,8 @@
 # 0.3 - add commands !changeteam and !swap
 # 0.4 - commands !kill, !changeteam, !swap won't act on an admin of higher level
 # 0.5 - add commands !punkbuster and !setnextmap. Fix bug in 0.4
-
-__version__ = '0.5'
+# 0.6 - add command !loadconfig
+__version__ = '0.6'
 __author__  = 'Courgette'
 
 import time
