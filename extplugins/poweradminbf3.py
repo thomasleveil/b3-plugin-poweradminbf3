@@ -25,19 +25,24 @@
 # 0.3 - add commands !changeteam and !swap
 # 0.4 - commands !kill, !changeteam, !swap won't act on an admin of higher level
 # 0.5 - add commands !punkbuster and !setnextmap. Fix bug in 0.4
-from ConfigParser import NoOptionError
-import time
-from b3.parsers.frostbite2.protocol import CommandFailedError
-from b3.parsers.frostbite2.util import MapListBlock
 
 __version__ = '0.5'
 __author__  = 'Courgette'
 
+import time
+import os
+import thread
 import b3
 import b3.events
 from b3.plugin import Plugin
+from ConfigParser import NoOptionError
+from b3.parsers.frostbite2.protocol import CommandFailedError
+from b3.parsers.frostbite2.util import MapListBlock
 
 class Poweradminbf3Plugin(Plugin):
+    _configSettings = []
+    _configPath = 'D:/svn/b3plugin-git/b3-plugin-poweradminbf3/extplugins/conf/serverconfigs/'
+
     def __init__(self, console, config=None):
         Plugin.__init__(self, console, config)
         self._adminPlugin = None
@@ -64,6 +69,14 @@ class Poweradminbf3Plugin(Plugin):
             self.getMessage('operation_denied')
         except NoOptionError:
             self._messages['operation_denied'] = "Operation denied"
+        try:
+            self._configPath = self.config.getpath('configs', 'path')
+            self.verbose('Path = %s' % self._configPath)
+        except NoOptionError:
+            self.error('Unable to load config: %s' % self._configPath)
+            pass
+        self.debug('loaded')
+
 
 
     def startup(self):
@@ -77,6 +90,7 @@ class Poweradminbf3Plugin(Plugin):
             self.error('Could not find admin plugin')
             return False
         self._registerCommands()
+        self.debug('started')
 
     def onEvent(self, event):
         """\
@@ -311,14 +325,64 @@ class Poweradminbf3Plugin(Plugin):
                 if client:
                     cmd.sayLoudOrPM(client, 'next map set to %s' % self.console.getEasyName(map_id))
 
-    def cmd_setmode(self, data, client=None, cmd=None):
+    def cmd_loadconfig(self, data, client=None, cmd=None):
         """\
         <preset> - Change mode to given preset (normal, hardcore, infantry, ...)
         """
-        raise NotImplementedError
+        if not data:
+            client.message('^7Invalid or missing data, try !help loadconfig')
+            return False
+        else:
+            #contsruct filename
+            _fName = self._configPath + unicode(data) + '.cfg'
+            self.verbose(_fName)
+            try:
+                self.loadFromFile(_fName)
+            except Exception, msg:
+                self.error('Error loading config: %s' % msg)
+                pass
 
+    def loadFromFile(self, _fName, _threaded=False):
+        """
+        Loads a preset config file to send to the server
+        """
+        self.verbose('Loading %s' % _fName)
+        if not os.path.isfile(_fName):
+            self.error('File %s does not exist!' % _fName)
+            return False
 
+        f = file(_fName, 'r')
+        lines = f.readlines()
+        self.verbose(lines)
+        if _threaded:
+            #delegate communication with the server to a new thread
+            thread.start_new_thread(self.load, (lines,))
+        else:
+            self.load(lines)
+        f.close()
 
+    def load(self, items=[]):
+        """
+        Clean up the lines in the config and send them to the server
+        """
+        _isMap = False
+        for w in items:
+            w = w.strip()
+            if len(w) > 1:
+                #execute the command
+                w = w.split()
+                if len(w) == 3:
+                    #this must be a map
+                    if not _isMap:
+                        self.console.write(('mapList.clear',)) # clear current in-memory map rotation list
+                        _isMap = True
+                    _result = self.console.write(('mapList.add', w[0], w[1], w[2]))
+                else:
+                    _result = self.console.write((w[0], w[1]))
+                #give it some time to rest between commands
+                time.sleep(0.5)
+                if _isMap:
+                    self.console.write(('mapList.save',)) # write current in-memory map list to server config file so if the server restarts our list is recovered.
 
 
 ################################################################################################################
@@ -353,3 +417,39 @@ class Poweradminbf3Plugin(Plugin):
             self.console.write(('admin.movePlayer', client.cid, teamId, squadId, 'true'))
         except CommandFailedError, err:
             self.warning('Error, server replied %s' % err)
+
+if __name__ == '__main__':
+    from b3.fake import fakeConsole
+    from b3.fake import admin, joe
+    import time
+
+    from b3.config import XmlConfigParser
+
+    conf = XmlConfigParser()
+    conf.setXml("""
+<configuration plugin="poweradminbf3">
+    <settings name="commands">
+        <set name="punkbuster-pb">100</set>
+        <set name="loadconfig">40</set>
+        <set name="roundnext-rnext">40</set>
+        <set name="roundrestart-rrestart">40</set>
+        <set name="kill">40</set>
+        <set name="changeteam">20</set>
+        <set name="swap">20</set>
+        <set name="setnextmap-snmap">20</set>
+    </settings>
+    <settings name="messages">
+        <set name="operation_denied">Operation denied</set>
+        <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
+    </settings>
+	<settings name="configs">
+		<set name="path">D:/svn/b3plugin-git/b3-plugin-poweradminbf3/extplugins/conf/serverconfigs/</set>
+	</settings>
+</configuration>
+    """)
+    p = Poweradminbf3Plugin(fakeConsole, conf)
+    p.onStartup()
+    time.sleep(1)
+    admin.connects(2)
+    time.sleep(1)
+    admin.says('!loadconfig hardcore-tdm')
