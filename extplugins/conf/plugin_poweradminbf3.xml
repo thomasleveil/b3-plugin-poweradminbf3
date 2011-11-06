@@ -38,6 +38,6 @@
       Define below the path to the preset bf3 server config files to be used by the !loadconfig command.
     -->
 	<settings name="configs">
-		<set name="path">@b3/extplugins/conf/serverconfigs/</set>
+		<set name="path">serverconfigs</set>
 	</settings>
 </configuration>

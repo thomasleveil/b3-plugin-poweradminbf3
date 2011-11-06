@@ -27,6 +27,7 @@ Commands
 !swap <player A> [<player B>] - swap player A's team/squad with player B's team/squad
 !setnextmap <map partial name> - select the next map to load after current round
 !punkbuster <punkbuster command> - run a punkbuster command
+!loadconfig <config file> - load a config file to change server vars, map list, game modes
 
 
 Support

@@ -41,7 +41,7 @@ from b3.parsers.frostbite2.util import MapListBlock
 
 class Poweradminbf3Plugin(Plugin):
     _configSettings = []
-    _configPath = 'D:/svn/b3plugin-git/b3-plugin-poweradminbf3/extplugins/conf/serverconfigs/'
+    _configPath = ''
 
     def __init__(self, console, config=None):
         Plugin.__init__(self, console, config)
@@ -73,8 +73,15 @@ class Poweradminbf3Plugin(Plugin):
             self._configPath = self.config.getpath('configs', 'path')
             self.verbose('Path = %s' % self._configPath)
         except NoOptionError:
-            self.error('Unable to load config: %s' % self._configPath)
-            pass
+            if hasattr(self.config, 'fileName') and self.config.fileName:
+                # try in plugin conf folder instead
+                tmpdir = os.path.dirname(self.config.fileName)
+                if os.path.isdir(tmpdir):
+                    self._configPath = tmpdir
+                    self.info('Unable to load config path from config file, using plugin config dir instead')
+                else:
+                    self.error('Unable to load config path from config file')
+
         self.debug('loaded')
 
 
@@ -330,62 +337,97 @@ class Poweradminbf3Plugin(Plugin):
         <preset> - Change mode to given preset (normal, hardcore, infantry, ...)
         """
         if not data:
-            client.message('^7Invalid or missing data, try !help loadconfig')
-            return False
+            client.message('Invalid or missing data, try !help loadconfig')
+        elif '/' in data or '../' in data:
+            client.message('Invalid data, try !help loadconfig')
         else:
-            #contsruct filename
-            _fName = self._configPath + unicode(data) + '.cfg'
+            file_name = None
+            # contsruct filename
+            _fName = self._configPath + os.path.sep + unicode(data) + '.cfg'
             self.verbose(_fName)
-            try:
-                self.loadFromFile(_fName)
-            except Exception, msg:
-                self.error('Error loading config: %s' % msg)
-                pass
+            if os.path.isfile(_fName):
+                file_name = _fName
+            else:
+                self.debug('File %s does not exist!' % _fName)
+                if hasattr(self.config, 'fileName') and self.config.fileName:
+                    # try in plugin conf folder instead
+                    _fName = os.path.dirname(self.config.fileName) + os.path.sep + unicode(data) + '.cfg'
+                    if os.path.isfile(_fName):
+                        file_name = _fName
+                    else:
+                        self.debug('File %s does not exist!' % _fName)
+                        # try _configPath within config dir
+                        dir_path = os.path.dirname(self.config.fileName) + os.path.sep + self._configPath
+                        if os.path.isdir(dir_path):
+                            _fName =  dir_path + os.path.sep + unicode(data) + '.cfg'
+                            if os.path.isfile(_fName):
+                                file_name = _fName
+                            else:
+                                self.debug('File %s does not exist!' % _fName)
+            if file_name is None:
+                client.message("Cannot find any config file named %s.cfg" % data)
+            else:
+                client.message("Loading config %s ..." % data)
+                try:
+                    self.loadFromFile(client, config_name=data, file_path=_fName, threaded=True)
+                except Exception, msg:
+                    self.error('Error loading config: %s' % msg)
+                    client.message("Error while loading config")
 
-    def loadFromFile(self, _fName, _threaded=False):
+    def loadFromFile(self, client, config_name, file_path, threaded=False):
         """
         Loads a preset config file to send to the server
         """
-        self.verbose('Loading %s' % _fName)
-        if not os.path.isfile(_fName):
-            self.error('File %s does not exist!' % _fName)
-            return False
+        self.verbose('Loading %s' % file_path)
 
-        f = file(_fName, 'r')
-        lines = f.readlines()
-        self.verbose(lines)
-        if _threaded:
+        lines = []
+        with file(file_path, 'r') as f:
+            lines = f.readlines()
+        self.verbose(repr(lines))
+        if threaded:
             #delegate communication with the server to a new thread
-            thread.start_new_thread(self.load, (lines,))
+            thread.start_new_thread(self.load, (client, config_name, lines))
         else:
-            self.load(lines)
-        f.close()
+            self.load(client, config_name, lines)
 
-    def load(self, items=[]):
+
+    def load(self, client, config_name, items=[]):
         """
         Clean up the lines in the config and send them to the server
         """
         _isMap = False
-        for w in items:
-            w = w.strip()
-            if len(w) > 1:
+        for line in items:
+            line = line.strip()
+            if len(line) > 1:
                 #execute the command
-                w = w.split()
+                w = line.split()
                 if len(w) > 2:
                     #this must be a map
                     if not _isMap:
                         self.console.write(('mapList.clear',)) # clear current in-memory map rotation list
                         _isMap = True
                     if len(w) == 3:
-                        _result = self.console.write(('mapList.add', w[0], w[1], w[2]))
+                        try:
+                            self.console.write(('mapList.add', w[0], w[1], w[2]))
+                        except CommandFailedError, err:
+                            client.message("Error sending \"%s\" to server. %s" % (line, err.message))
                     elif len(w) == 4:
-                        _result = self.console.write(('mapList.add', w[0], w[1], w[2], w[3]))
+                        try:
+                            self.console.write(('mapList.add', w[0], w[1], w[2], w[3]))
+                        except CommandFailedError, err:
+                            client.message("Error sending \"%s\" to server. %s" % (line, err.message))
                 else:
-                    _result = self.console.write((w[0], w[1]))
-                #give it some time to rest between commands
-                time.sleep(0.5)
-                if _isMap:
-                    self.console.write(('mapList.save',)) # write current in-memory map list to server config file so if the server restarts our list is recovered.
+                    try:
+                        self.console.write((w[0], w[1]))
+                    except CommandFailedError, err:
+                        client.message("Error sending %r to server. %s" % (w, err.message))
+        if _isMap:
+            try:
+                self.console.write(('mapList.save',)) # write current in-memory map list to server config file so if the server restarts our list is recovered.
+                client.message("New map rotation list written to disk.")
+            except CommandFailedError, err:
+                client.message("Error writting map rotation list to disk. %s" % err.message)
+        client.message("New config \"%s\" loaded" % config_name)
 
 
 ################################################################################################################
