@@ -371,12 +371,15 @@ class Poweradminbf3Plugin(Plugin):
             if len(w) > 1:
                 #execute the command
                 w = w.split()
-                if len(w) == 3:
+                if len(w) > 2:
                     #this must be a map
                     if not _isMap:
                         self.console.write(('mapList.clear',)) # clear current in-memory map rotation list
                         _isMap = True
-                    _result = self.console.write(('mapList.add', w[0], w[1], w[2]))
+                    if len(w) == 3:
+                        _result = self.console.write(('mapList.add', w[0], w[1], w[2]))
+                    elif len(w) == 4:
+                        _result = self.console.write(('mapList.add', w[0], w[1], w[2], w[3]))
                 else:
                     _result = self.console.write((w[0], w[1]))
                 #give it some time to rest between commands
