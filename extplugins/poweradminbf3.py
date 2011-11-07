@@ -40,7 +40,6 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock
 
 class Poweradminbf3Plugin(Plugin):
-    _configSettings = []
     _configPath = ''
 
     def __init__(self, console, config=None):
@@ -65,12 +64,14 @@ class Poweradminbf3Plugin(Plugin):
             self.getMessage('operation_denied_level', {'name': '', 'group': ''})
         except NoOptionError:
             self._messages['operation_denied_level'] = "Operation denied because %(name)s is in the %(group)s group"
+
         try:
             self.getMessage('operation_denied')
         except NoOptionError:
             self._messages['operation_denied'] = "Operation denied"
+
         try:
-            self._configPath = self.config.getpath('configs', 'path')
+            self._configPath = self.config.getpath('preferences', 'config_path')
             self.verbose('Path = %s' % self._configPath)
         except NoOptionError:
             if hasattr(self.config, 'fileName') and self.config.fileName:
@@ -78,7 +79,6 @@ class Poweradminbf3Plugin(Plugin):
                 tmpdir = os.path.dirname(self.config.fileName)
                 if os.path.isdir(tmpdir):
                     self._configPath = tmpdir
-                    self.info('Unable to load config path from config file, using plugin config dir instead')
                 else:
                     self.error('Unable to load config path from config file')
 
@@ -464,6 +464,8 @@ class Poweradminbf3Plugin(Plugin):
             self.warning('Error, server replied %s' % err)
 
 if __name__ == '__main__':
+    from test import prepare_fakeparser_for_tests
+    prepare_fakeparser_for_tests()
     from b3.fake import fakeConsole
     from b3.fake import admin, joe
     import time
@@ -474,25 +476,15 @@ if __name__ == '__main__':
     conf.setXml("""
 <configuration plugin="poweradminbf3">
     <settings name="commands">
-        <set name="punkbuster-pb">100</set>
         <set name="loadconfig">40</set>
-        <set name="roundnext-rnext">40</set>
-        <set name="roundrestart-rrestart">40</set>
-        <set name="kill">40</set>
-        <set name="changeteam">20</set>
-        <set name="swap">20</set>
-        <set name="setnextmap-snmap">20</set>
     </settings>
-    <settings name="messages">
-        <set name="operation_denied">Operation denied</set>
-        <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
-    </settings>
-	<settings name="configs">
-		<set name="path">D:/svn/b3plugin-git/b3-plugin-poweradminbf3/extplugins/conf/serverconfigs/</set>
+	<settings name="preferences">
+		<set name="config_path">%(script_dir)s/conf/serverconfigs</set>
 	</settings>
 </configuration>
-    """)
+    """ % {'script_dir': os.path.dirname(os.path.abspath(__file__))})
     p = Poweradminbf3Plugin(fakeConsole, conf)
+    p.onLoadConfig()
     p.onStartup()
     time.sleep(1)
     admin.connects(2)

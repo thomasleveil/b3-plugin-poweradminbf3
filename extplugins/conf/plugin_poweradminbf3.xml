@@ -34,10 +34,8 @@
         <set name="operation_denied">Operation denied</set>
         <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
     </settings>
-    <!--
-      Define below the path to the preset bf3 server config files to be used by the !loadconfig command.
-    -->
-	<settings name="configs">
-		<set name="path">serverconfigs</set>
+	<settings name="preferences">
+        <!-- config_path : the path to the preset bf3 server config files to be used by the !loadconfig command. -->
+		<set name="config_path">serverconfigs</set>
 	</settings>
 </configuration>
