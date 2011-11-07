@@ -26,7 +26,8 @@
 # 0.4 - commands !kill, !changeteam, !swap won't act on an admin of higher level
 # 0.5 - add commands !punkbuster and !setnextmap. Fix bug in 0.4
 # 0.6 - add command !loadconfig
-__version__ = '0.6'
+# 0.7 - add the swap_no_level_check config variable to allow one to !swap players without any level restriction
+__version__ = '0.7'
 __author__  = 'Courgette'
 
 import time
