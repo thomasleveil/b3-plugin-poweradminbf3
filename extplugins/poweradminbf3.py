@@ -40,11 +40,12 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock
 
 class Poweradminbf3Plugin(Plugin):
-    _configPath = ''
 
     def __init__(self, console, config=None):
         Plugin.__init__(self, console, config)
         self._adminPlugin = None
+        self._configPath = ''
+        self.swap_no_level_check = None
 
 
 ################################################################################################################
@@ -72,7 +73,7 @@ class Poweradminbf3Plugin(Plugin):
 
         try:
             self._configPath = self.config.getpath('preferences', 'config_path')
-            self.verbose('Path = %s' % self._configPath)
+            self.info('Path = %s' % self._configPath)
         except NoOptionError:
             if hasattr(self.config, 'fileName') and self.config.fileName:
                 # try in plugin conf folder instead
@@ -82,9 +83,19 @@ class Poweradminbf3Plugin(Plugin):
                 else:
                     self.error('Unable to load config path from config file')
 
-        self.debug('loaded')
-
-
+        try:
+            self.swap_no_level_check = self.config.getint('preferences', 'swap_no_level_check')
+            self.info('swap_no_level_check is %s' % self.swap_no_level_check)
+        except NoOptionError:
+            self.swap_no_level_check = 100
+            self.info('No config option \"preferences\\swap_no_level_check\" found. Using default value : %s' % self.swap_no_level_check)
+        except ValueError, err:
+            self.swap_no_level_check = 100
+            self.debug(err)
+            self.warning('Could not read level value from config option \"preferences\\swap_no_level_check\". Using default value \"%s\" instead. (%s)' % (self.swap_no_level_check, err))
+        except Exception, err:
+            self.swap_no_level_check = 100
+            self.error(err)
 
     def startup(self):
         """\
@@ -219,19 +230,20 @@ class Poweradminbf3Plugin(Plugin):
         if not sclientB:
             return
 
-        # check if client A and client B are in lower or equal groups
-        if client.maxLevel < sclientA.maxLevel:
-            if sclientA.maxGroup:
-                client.message(self.getMessage('operation_denied_level', {'name': sclientA.name, 'group': sclientA.maxGroup.name}))
-            else:
-                client.message(self.getMessage('operation_denied'))
-            return
-        if client.maxLevel < sclientB.maxLevel:
-            if sclientB.maxGroup:
-                client.message(self.getMessage('operation_denied_level', {'name': sclientB.name, 'group': sclientB.maxGroup.name}))
-            else:
-                client.message(self.getMessage('operation_denied'))
-            return
+        if client.maxLevel < self.swap_no_level_check:
+            # check if client A and client B are in lower or equal groups
+            if client.maxLevel < sclientA.maxLevel:
+                if sclientA.maxGroup:
+                    client.message(self.getMessage('operation_denied_level', {'name': sclientA.name, 'group': sclientA.maxGroup.name}))
+                else:
+                    client.message(self.getMessage('operation_denied'))
+                return
+            if client.maxLevel < sclientB.maxLevel:
+                if sclientB.maxGroup:
+                    client.message(self.getMessage('operation_denied_level', {'name': sclientB.name, 'group': sclientB.maxGroup.name}))
+                else:
+                    client.message(self.getMessage('operation_denied'))
+                return
 
 
         if sclientA.teamId not in (1, 2) and sclientB.teamId not in (1, 2):

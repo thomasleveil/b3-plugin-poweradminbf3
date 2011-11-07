@@ -37,5 +37,10 @@
 	<settings name="preferences">
         <!-- config_path : the path to the preset bf3 server config files to be used by the !loadconfig command. -->
 		<set name="config_path">serverconfigs</set>
+        <!-- swap_no_level_check : a level above which a player can swap anyone without any level restriction.
+            For example, if swap_no_level_check is 40 (admin), then an admin can !swap players of level above himself.
+            While a moderator will only be able to swap players of level moderator or below.
+         -->
+        <set name="swap_no_level_check ">60</set>
 	</settings>
 </configuration>
