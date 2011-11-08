@@ -10,7 +10,7 @@ def menu(items):
 |                                             |""".format(title="Available tests")
 
     for i in range(len(items)):
-        print "| {:>3} - {:<37} |".format(i + 1 , items[i][5:])
+        print "| {:>3} - {:<37} |".format(i + 1 , items[i][5:].replace('_', ' '))
 
     print """\
 |                                             |
