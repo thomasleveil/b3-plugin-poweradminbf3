@@ -474,30 +474,4 @@ class Poweradminbf3Plugin(Plugin):
         except CommandFailedError, err:
             self.warning('Error, server replied %s' % err)
 
-if __name__ == '__main__':
-    from test import prepare_fakeparser_for_tests
-    prepare_fakeparser_for_tests()
-    from b3.fake import fakeConsole
-    from b3.fake import admin, joe
-    import time
 
-    from b3.config import XmlConfigParser
-
-    conf = XmlConfigParser()
-    conf.setXml("""
-<configuration plugin="poweradminbf3">
-    <settings name="commands">
-        <set name="loadconfig">40</set>
-    </settings>
-	<settings name="preferences">
-		<set name="config_path">%(script_dir)s/conf/serverconfigs</set>
-	</settings>
-</configuration>
-    """ % {'script_dir': os.path.dirname(os.path.abspath(__file__))})
-    p = Poweradminbf3Plugin(fakeConsole, conf)
-    p.onLoadConfig()
-    p.onStartup()
-    time.sleep(1)
-    admin.connects(2)
-    time.sleep(1)
-    admin.says('!loadconfig hardcore-tdm')
