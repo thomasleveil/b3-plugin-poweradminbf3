@@ -26,7 +26,12 @@
         <set name="changeteam">20</set>
         <set name="swap">20</set>
         <set name="setnextmap-snmap">20</set>
+
+        <set name="scramble">20</set>
+        <set name="scramblemode">20</set>
+        <set name="autoscramble">20</set>
     </settings>
+
     <settings name="messages">
         <!--
             In this section you can customize some of the messages displayed to users.
@@ -34,6 +39,7 @@
         <set name="operation_denied">Operation denied</set>
         <set name="operation_denied_level">Operation denied because %(name)s is in the %(group)s group</set>
     </settings>
+
 	<settings name="preferences">
         <!-- config_path : the path to the preset bf3 server config files to be used by the !loadconfig command. -->
 		<set name="config_path">serverconfigs</set>
@@ -44,4 +50,17 @@
          -->
         <set name="no_level_check_level">60</set>
 	</settings>
+
+    <settings name="scrambler">
+        <!-- mode can be one of : off, round, map
+            'off': no auto scrambling
+            'round': auto scrambling will run at each round start
+            'map': auto scrambling will run at each map start
+        -->
+        <set name="mode">off</set>
+        <!-- There are two scrambling strategies : 'random' and 'score'
+            When 'score', players will be scrambled based on players' score to try to even team skills
+        -->
+        <set name="strategy">random</set>
+</settings>
 </configuration>

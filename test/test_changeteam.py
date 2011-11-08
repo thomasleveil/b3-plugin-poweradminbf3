@@ -25,6 +25,7 @@ simon.teamId = 1
 joe.connects('Joe')
 joe.teamId = 1
 jack = FakeClient(fakeConsole, name="Jack", exactName="Jack", guid="azerazerzarazrzae", groupBits=1)
+jack.connects('Jack')
 jack.teamId = 1
 superadmin.connects('superadmin')
 superadmin.teamId = 2
@@ -48,5 +49,5 @@ joe.says("!changeteam simon")
 
 print "\n\n####################################### Jack should be able to !changeteam an equal level player"
 assert joe.maxLevel == jack.maxLevel
-joe.says("!changeteam jack")
+jack.says("!changeteam joe")
 

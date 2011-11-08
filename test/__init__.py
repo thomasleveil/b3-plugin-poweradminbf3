@@ -1,16 +1,24 @@
 # -*- encoding: utf-8 -*-
+import random
 
 from b3.fake import fakeConsole, FakeConsole
 from b3.fake import FakeClient, joe, simon, moderator, superadmin
 
 
-def frostbitewrite(msg, maxRetries=1, needConfirmation=False):
+def frostbitewrite(self, msg, maxRetries=1, needConfirmation=False):
     """send text to the console"""
     if type(msg) == str:
         # console abuse to broadcast text
         self.say(msg)
     elif type(msg) == tuple:
         print "   >>> %s" % repr(msg)
+        if len(msg) >= 4 and msg[0] == 'admin.movePlayer':
+            client = getClient(self, msg[1])
+            if client:
+                client.teamId = int(msg[2])
+                client.squad = int(msg[3])
+
+
 
 
 def authorizeClients():
@@ -61,41 +69,13 @@ def joinsTeam(self, teamId):
     self.console.queueEvent(self.console.getEvent("EVT_CLIENT_TEAM_CHANGE", teamId, self))
 
 
-def printTeams():
-    team1players = []
-    team2players = []
-    for client in fakeConsole.clients.getList():
-        if str(client.teamId) == '1':
-            team1players.append(client)
-        elif str(client.teamId) == '2':
-            team2players.append(client)
-    print("+" + ("-"*32) + "+" + ("-"*32) + "+")
-    while len(team1players) + len(team2players) > 0:
-        try:
-            p1 = team1players.pop()
-            p1name = p1.name
-            c = p1.var(p, 'teamtime', fakeConsole.time())
-            p1teamtime = "(%s)" % c.value
-        except IndexError:
-            p1name = ''
-            p1teamtime = ''
-        try:
-            p2 = team2players.pop()
-            p2name = p2.name
-            c = p2.var(p, 'teamtime', fakeConsole.time())
-            p2teamtime = "(%s)" % c.value
-        except IndexError:
-            p2name = ''
-            p2teamtime = ''
-        print("| {:>18}{:12} | {:>18}{:12} |".format(p1name, p1teamtime, p2name, p2teamtime))
-    print("+" + ("-"*32) + "+" + ("-"*32) + "+")
-
-
 def prepare_fakeparser_for_tests():
     fakeConsole.gameName = 'bf3'
-    fakeConsole.write = frostbitewrite
     fakeConsole.authorizeClients = authorizeClients
+    FakeConsole.write = frostbitewrite
     FakeConsole.getPlayerList = getPlayerList
     FakeConsole.getPlayerScores = getPlayerScores
     FakeConsole.getClient = getClient
     FakeClient.joinsTeam = joinsTeam
+    fakeConsole.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
+    fakeConsole.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')

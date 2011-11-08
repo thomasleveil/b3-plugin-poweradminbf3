@@ -28,6 +28,9 @@ Commands
 !setnextmap <map partial name> - select the next map to load after current round
 !punkbuster <punkbuster command> - run a punkbuster command
 !loadconfig <config file> - load a config file to change server vars, map list, game modes
+!scramble - (un)request scrambler to scramble teams at next round
+!scramblemode <random/score> - set the scrambling strategy
+!autoscramble <off/round/map> - set the auto-scrambling mode
 
 
 Support

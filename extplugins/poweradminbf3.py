@@ -27,10 +27,14 @@
 # 0.5 - add commands !punkbuster and !setnextmap. Fix bug in 0.4
 # 0.6 - add command !loadconfig
 # 0.7 - add the swap_no_level_check config variable to allow one to !swap players without any level restriction
-# 0.8 - renamed 'swap_no_level_check' to 'no_level_check_level' and this option now also applies to the !changeteam command
+# 0.8
+#   renamed 'swap_no_level_check' to 'no_level_check_level' and this option now also applies to the !changeteam command
+#   add commands !scramble, !scramblemode, !autoscramble
+
 __version__ = '0.8'
 __author__  = 'Courgette'
 
+import random
 import time
 import os
 import thread
@@ -39,7 +43,82 @@ import b3.events
 from b3.plugin import Plugin
 from ConfigParser import NoOptionError
 from b3.parsers.frostbite2.protocol import CommandFailedError
-from b3.parsers.frostbite2.util import MapListBlock
+from b3.parsers.frostbite2.util import MapListBlock, PlayerInfoBlock
+
+
+class Scrambler:
+    _plugin = None
+    _getClients_method = None
+    _last_round_scores = PlayerInfoBlock([0,0])
+
+    def __init__(self, plugin):
+        self._plugin = plugin
+        self._getClients_method = self._getClients_randomly
+
+    def scrambleTeams(self):
+        clients = self._getClients_method()
+        if len(clients)==0:
+            return
+        elif len(clients)<3:
+            self.debug("Too few players to scramble")
+        else:
+            self._scrambleTeams(clients)
+
+    def setStrategy(self, strategy):
+        """Set the scrambling strategy"""
+        if strategy.lower() == 'random':
+            self._getClients_method = self._getClients_randomly
+        elif strategy.lower() == 'score':
+            self._getClients_method = self._getClients_by_scores
+        else:
+            raise ValueError
+
+    def onRoundOverTeamScores(self, playerInfoBlock):
+        self._last_round_scores = playerInfoBlock
+
+    def _scrambleTeams(self, listOfPlayers):
+        team = 0
+        while len(listOfPlayers)>0:
+            self._plugin._movePlayer(listOfPlayers.pop(), team + 1)
+            team = (team + 1)%2
+
+    def _getClients_randomly(self):
+        clients = self._plugin.console.clients.getList()
+        random.shuffle(clients)
+        return clients
+
+    def _getClients_by_scores(self):
+        allClients = self._plugin.console.clients.getList()
+        self.debug('all clients : %r' % [x.cid for x in allClients])
+        sumofscores = reduce(lambda x, y: x+y, [int(data['score']) for data in self._last_round_scores], 0)
+        self.debug('sum of scores is %s' % sumofscores)
+        if sumofscores == 0:
+            self.debug('no score to sort on, using ramdom strategy instead')
+            random.shuffle(allClients)
+            return allClients
+        else:
+            sortedScores = sorted(self._last_round_scores, key=lambda x:x['score'])
+            self.debug('sorted score : %r' % sortedScores)
+            sortedClients = []
+            for cid in [x['name'] for x in sortedScores]:
+                # find client object for each player score
+                clients = [c for c in allClients if c.cid == cid]
+                if clients and len(clients)>0:
+                    allClients.remove(clients[0])
+                    sortedClients.append(clients[0])
+            self.debug('sorted clients A : %r' % map(lambda x:x.cid, sortedClients))
+            random.shuffle(allClients)
+            for client in allClients:
+                # add remaining clients (they had no score ?)
+                sortedClients.append(client)
+            self.debug('sorted clients B : %r' % map(lambda x:x.cid, sortedClients))
+            return sortedClients
+
+    def debug(self, msg):
+        self._plugin.debug('scramber:\t %s' % msg)
+
+
+
 
 class Poweradminbf3Plugin(Plugin):
 
@@ -48,6 +127,11 @@ class Poweradminbf3Plugin(Plugin):
         self._adminPlugin = None
         self._configPath = ''
         self.no_level_check_level = 100
+
+        self._scrambling_planned = False
+        self._autoscramble_rounds = False
+        self._autoscramble_maps = False
+        self._scrambler = Scrambler(self)
 
 
 ################################################################################################################
@@ -96,6 +180,8 @@ class Poweradminbf3Plugin(Plugin):
             self.error(err)
         self.info('no_level_check_level is %s' % self.no_level_check_level)
 
+        self._load_scrambler()
+
     def startup(self):
         """\
         Initialize plugin settings
@@ -107,13 +193,37 @@ class Poweradminbf3Plugin(Plugin):
             self.error('Could not find admin plugin')
             return False
         self._registerCommands()
-        self.debug('started')
+
+        # Register our events
+        self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_PLAYER_SCORES)
+        self.registerEvent(b3.events.EVT_CLIENT_AUTH)
+        self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
+
 
     def onEvent(self, event):
         """\
         Handle intercepted events
         """
-        pass
+        if event.type == b3.events.EVT_GAME_ROUND_PLAYER_SCORES:
+            self._scrambler.onRoundOverTeamScores(event.data)
+        elif event.type == b3.events.EVT_GAME_ROUND_START:
+            self.debug('manual scramble planned : '.rjust(30) + str(self._scrambling_planned))
+            self.debug('auto scramble rounds : '.rjust(30) + str(self._autoscramble_rounds))
+            self.debug('auto scramble maps : '.rjust(30) + str(self._autoscramble_maps))
+            self.debug('self.console.game.rounds : '.rjust(30) + repr(self.console.game.rounds))
+            if self._scrambling_planned:
+                self.debug('manual scramble is planned')
+                self._scrambler.scrambleTeams()
+                self._scrambling_planned = False
+            else:
+                if self._autoscramble_rounds:
+                    self.debug('auto scramble is planned for rounds')
+                    self._scrambler.scrambleTeams()
+                elif self._autoscramble_maps and self.console.game.rounds == 0:
+                    self.debug('auto scramble is planned for maps')
+                    self._scrambler.scrambleTeams()
+
 
 ################################################################################################################
 #
@@ -385,12 +495,90 @@ class Poweradminbf3Plugin(Plugin):
                     self.error('Error loading config: %s' % msg)
                     client.message("Error while loading config")
 
+    def cmd_scramble(self, data, client, cmd=None):
+        """\
+        Toggle on/off the teams scrambling for next round
+        """
+        if self._scrambling_planned:
+            self._scrambling_planned = False
+            client.message('Teams scrambling canceled for next round')
+        else:
+            self._scrambling_planned = True
+            client.message('Teams will be scrambled at next round start')
+
+    def cmd_scramblemode(self, data, client, cmd=None):
+        """\
+        <random|score> change the scrambling strategy
+        """
+        if not data:
+            client.message("invalid data. Expecting 'random' or 'score'")
+        else:
+            if data[0].lower() == 'r':
+                self._scrambler.setStrategy('random')
+                client.message('Scrambling strategy is now: random')
+            elif data[0].lower() == 's':
+                self._scrambler.setStrategy('score')
+                client.message('Scrambling strategy is now: score')
+            else:
+                client.message("invalid data. Expecting 'random' or 'score'")
+
+    def cmd_autoscramble(self, data, client, cmd=None):
+        """\
+        <off|round|map> manage the auto scrambler
+        """
+        if not data:
+            client.message("invalid data. Expecting one of [off, round, map]")
+        else:
+            if data.lower() == 'off':
+                self._autoscramble_rounds = False
+                self._autoscramble_maps = False
+                client.message('Auto scrambler now disabled')
+            elif data[0].lower() == 'r':
+                self._autoscramble_rounds = True
+                self._autoscramble_maps = False
+                client.message('Auto scrambler will run at every round start')
+            elif data[0].lower() == 'm':
+                self._autoscramble_rounds = False
+                self._autoscramble_maps = True
+                client.message('Auto scrambler will run at every map change')
+            else:
+                client.message("invalid data. Expecting one of [off, round, map]")
 
 ################################################################################################################
 #
 #    Other methods
 #
 ################################################################################################################
+
+    def _load_scrambler(self):
+        try:
+            strategy = self.config.get('scrambler', 'strategy')
+            self._scrambler.setStrategy(strategy)
+            self.debug("scrambling strategy '%s' set" % strategy)
+        except Exception, err:
+            self.debug(err)
+            self._scrambler.setStrategy('random')
+            self.debug('Using default value (random) for scrambling strategy')
+
+        try:
+            mode = self.config.get('scrambler', 'mode').tolower()
+            if mode not in ('off', 'round', 'map'):
+                raise ValueError
+            if mode == 'off':
+                self._autoscramble_rounds = False
+                self._autoscramble_maps = False
+            elif mode == 'round':
+                self._autoscramble_rounds = True
+                self._autoscramble_maps = False
+            elif mode == 'map':
+                self._autoscramble_rounds = False
+                self._autoscramble_maps = True
+            self.debug('auto scrambler mode is : %s' % mode)
+        except Exception, err:
+            self.debug(err)
+            self._autoscramble_rounds = False
+            self._autoscramble_maps = False
+            self.warning('Using default value (off) for auto scrambling mode')
 
     def _getCmd(self, cmd):
         cmd = 'cmd_%s' % cmd
