@@ -30,8 +30,8 @@
 # 0.8
 #   renamed 'swap_no_level_check' to 'no_level_check_level' and this option now also applies to the !changeteam command
 #   add commands !scramble, !scramblemode, !autoscramble
-
-__version__ = '0.8'
+# 0.8.1 - fix crash with 0.8
+__version__ = '0.8.1'
 __author__  = 'Courgette'
 
 import random
@@ -123,15 +123,15 @@ class Scrambler:
 class Poweradminbf3Plugin(Plugin):
 
     def __init__(self, console, config=None):
-        Plugin.__init__(self, console, config)
         self._adminPlugin = None
         self._configPath = ''
         self.no_level_check_level = 100
-
         self._scrambling_planned = False
         self._autoscramble_rounds = False
         self._autoscramble_maps = False
         self._scrambler = Scrambler(self)
+        Plugin.__init__(self, console, config)
+
 
 
 ################################################################################################################
