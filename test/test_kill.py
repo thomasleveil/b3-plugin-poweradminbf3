@@ -11,7 +11,7 @@ conf = XmlConfigParser()
 conf.loadFromString("""
 <configuration plugin="poweradminbf3">
   <settings name="commands">
-    <set name="kill">40</set>
+    <set name="kill">0</set>
   </settings>
 </configuration>
 """)
@@ -34,8 +34,7 @@ print "Simon's group is " + simon.maxGroup.name
 print "superadmin's group is " +  superadmin.maxGroup.name
 
 
-print "#"*80 ###################################### test !kill
+print "\n\n####################################### test !kill"
 superadmin.says("!kill joe")
-p._adminPlugin._commands["kill"].level = 0,100
 joe.says("!kill god")
 joe.says("!kill simon")

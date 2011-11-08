@@ -39,7 +39,7 @@ print "superadmin's group is " +  superadmin.maxGroup.name
 
 
 
-print "#"*80 ###################################### test !swap
+print "\n\n####################################### test superadmin says !swap joe"
 superadmin.teamId = 2
 superadmin.squad = 6
 print "superadmin.teamId: %s, squad: %s" % (superadmin.teamId, superadmin.squad)
@@ -48,16 +48,22 @@ joe.squad = 7
 print "joe.teamId: %s, squad: %s" % (joe.teamId, joe.squad)
 superadmin.says('!swap joe')
 
+
+
+print "\n\n####################################### test !swap joe simon"
 simon.teamId = 1
 simon.squad = 6
+print "simon.teamId: %s, squad: %s" % (simon.teamId, simon.squad)
 joe.teamId = 1
 joe.squad = 6
+print "joe.teamId: %s, squad: %s" % (joe.teamId, joe.squad)
 superadmin.says("!swap joe simon")
 
+
+
+print "\n\n####################################### test !swap joe simon"
+print "simon.teamId: %s, squad: %s" % (simon.teamId, simon.squad)
 joe.squad = 2
+print "joe.teamId: %s, squad: %s" % (joe.teamId, joe.squad)
 superadmin.says("!swap joe simon")
 
-# test groups
-p._adminPlugin._commands["swap"].level = 0,100
-simon.says("!swap moderator")
-moderator.says("!swap simon god")

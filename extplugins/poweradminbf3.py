@@ -27,7 +27,8 @@
 # 0.5 - add commands !punkbuster and !setnextmap. Fix bug in 0.4
 # 0.6 - add command !loadconfig
 # 0.7 - add the swap_no_level_check config variable to allow one to !swap players without any level restriction
-__version__ = '0.7'
+# 0.8 - renamed 'swap_no_level_check' to 'no_level_check_level' and this option now also applies to the !changeteam command
+__version__ = '0.8'
 __author__  = 'Courgette'
 
 import time
@@ -46,7 +47,7 @@ class Poweradminbf3Plugin(Plugin):
         Plugin.__init__(self, console, config)
         self._adminPlugin = None
         self._configPath = ''
-        self.swap_no_level_check = None
+        self.no_level_check_level = 100
 
 
 ################################################################################################################
@@ -85,18 +86,15 @@ class Poweradminbf3Plugin(Plugin):
                     self.error('Unable to load config path from config file')
 
         try:
-            self.swap_no_level_check = self.config.getint('preferences', 'swap_no_level_check')
-            self.info('swap_no_level_check is %s' % self.swap_no_level_check)
+            self.no_level_check_level = self.config.getint('preferences', 'no_level_check_level')
         except NoOptionError:
-            self.swap_no_level_check = 100
-            self.info('No config option \"preferences\\swap_no_level_check\" found. Using default value : %s' % self.swap_no_level_check)
+            self.info('No config option \"preferences\\no_level_check_level\" found. Using default value : %s' % self.no_level_check_level)
         except ValueError, err:
-            self.swap_no_level_check = 100
             self.debug(err)
-            self.warning('Could not read level value from config option \"preferences\\swap_no_level_check\". Using default value \"%s\" instead. (%s)' % (self.swap_no_level_check, err))
+            self.warning('Could not read level value from config option \"preferences\\no_level_check_level\". Using default value \"%s\" instead. (%s)' % (self.no_level_check_level, err))
         except Exception, err:
-            self.swap_no_level_check = 100
             self.error(err)
+        self.info('no_level_check_level is %s' % self.no_level_check_level)
 
     def startup(self):
         """\
@@ -189,7 +187,7 @@ class Poweradminbf3Plugin(Plugin):
                 # a player matching the name was not found, a list of closest matches will be displayed
                 # we can exit here and the user will retry with a more specific player
                 return
-            elif sclient.maxLevel >= client.maxLevel:
+            elif sclient.maxLevel >= client.maxLevel and self.no_level_check_level > client.maxLevel:
                 if sclient.maxGroup:
                     client.message(self.getMessage('operation_denied_level', {'name': sclient.name, 'group': sclient.maxGroup.name}))
                 else:
@@ -231,7 +229,7 @@ class Poweradminbf3Plugin(Plugin):
         if not sclientB:
             return
 
-        if client.maxLevel < self.swap_no_level_check:
+        if client.maxLevel < self.no_level_check_level:
             # check if client A and client B are in lower or equal groups
             if client.maxLevel < sclientA.maxLevel:
                 if sclientA.maxGroup:

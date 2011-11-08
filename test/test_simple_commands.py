@@ -25,7 +25,7 @@ p.onStartup()
 
 superadmin.connects('superadmin')
 
-print "#"*80 ###################################### test basic commands
+print "\n\n####################################### test basic commands. They should all work"
 superadmin.says("!roundnext")
 superadmin.says("!rnext")
 superadmin.says("!roundrestart")

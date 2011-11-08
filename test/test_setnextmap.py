@@ -24,11 +24,11 @@ p.onStartup()
 
 superadmin.connects('superadmin')
 
-print "#"*80 ###################################### test basic commands
+print "\n\n====================================== test !setnextmap nominal case"
 superadmin.says('!setnextmap')
 
 
-print "\n"*2 +  "="*50 + " case map name not recognised"
+print "\n\n====================================== test case map name not recognised"
 def my_getMapsSoundingLike_3_suggestions(mapname): return ['map #1', 'map #2', 'map #3']
 fakeConsole.getMapsSoundingLike = my_getMapsSoundingLike_3_suggestions
 superadmin.says('!snmap somemap')
