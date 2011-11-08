@@ -297,7 +297,7 @@ class Poweradminbf3Plugin(Plugin):
                 # a player matching the name was not found, a list of closest matches will be displayed
                 # we can exit here and the user will retry with a more specific player
                 return
-            elif sclient.maxLevel >= client.maxLevel and self.no_level_check_level > client.maxLevel:
+            elif sclient.maxLevel > client.maxLevel and self.no_level_check_level > client.maxLevel:
                 if sclient.maxGroup:
                     client.message(self.getMessage('operation_denied_level', {'name': sclient.name, 'group': sclient.maxGroup.name}))
                 else:
