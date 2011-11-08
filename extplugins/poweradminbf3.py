@@ -380,12 +380,47 @@ class Poweradminbf3Plugin(Plugin):
             else:
                 client.message("Loading config %s ..." % data)
                 try:
-                    self.loadFromFile(client, config_name=data, file_path=_fName, threaded=True)
+                    self._load_server_config_from_file(client, config_name=data, file_path=_fName, threaded=True)
                 except Exception, msg:
                     self.error('Error loading config: %s' % msg)
                     client.message("Error while loading config")
 
-    def loadFromFile(self, client, config_name, file_path, threaded=False):
+
+################################################################################################################
+#
+#    Other methods
+#
+################################################################################################################
+
+    def _getCmd(self, cmd):
+        cmd = 'cmd_%s' % cmd
+        if hasattr(self, cmd):
+            func = getattr(self, cmd)
+            return func
+        return None
+
+    def _registerCommands(self):
+        # register our commands
+        if 'commands' in self.config.sections():
+            for cmd in self.config.options('commands'):
+                level = self.config.get('commands', cmd)
+                sp = cmd.split('-')
+                alias = None
+                if len(sp) == 2:
+                    cmd, alias = sp
+                func = self._getCmd(cmd)
+                if func:
+                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
+
+    def _movePlayer(self, client, teamId, squadId=0):
+        try:
+            client.setvar(self, 'movedByBot', True)
+            self.console.write(('admin.movePlayer', client.cid, teamId, squadId, 'true'))
+        except CommandFailedError, err:
+            self.warning('Error, server replied %s' % err)
+
+
+    def _load_server_config_from_file(self, client, config_name, file_path, threaded=False):
         """
         Loads a preset config file to send to the server
         """
@@ -397,12 +432,12 @@ class Poweradminbf3Plugin(Plugin):
         self.verbose(repr(lines))
         if threaded:
             #delegate communication with the server to a new thread
-            thread.start_new_thread(self.load, (client, config_name, lines))
+            thread.start_new_thread(self.load_server_config, (client, config_name, lines))
         else:
-            self.load(client, config_name, lines)
+            self.load_server_config(client, config_name, lines)
 
 
-    def load(self, client, config_name, items=[]):
+    def load_server_config(self, client, config_name, items=[]):
         """
         Clean up the lines in the config and send them to the server
         """
@@ -439,39 +474,4 @@ class Poweradminbf3Plugin(Plugin):
             except CommandFailedError, err:
                 client.message("Error writting map rotation list to disk. %s" % err.message)
         client.message("New config \"%s\" loaded" % config_name)
-
-
-################################################################################################################
-#
-#    Other methods
-#
-################################################################################################################
-
-    def _getCmd(self, cmd):
-        cmd = 'cmd_%s' % cmd
-        if hasattr(self, cmd):
-            func = getattr(self, cmd)
-            return func
-        return None
-
-    def _registerCommands(self):
-        # register our commands
-        if 'commands' in self.config.sections():
-            for cmd in self.config.options('commands'):
-                level = self.config.get('commands', cmd)
-                sp = cmd.split('-')
-                alias = None
-                if len(sp) == 2:
-                    cmd, alias = sp
-                func = self._getCmd(cmd)
-                if func:
-                    self._adminPlugin.registerCommand(self, cmd, level, func, alias)
-
-    def _movePlayer(self, client, teamId, squadId=0):
-        try:
-            client.setvar(self, 'movedByBot', True)
-            self.console.write(('admin.movePlayer', client.cid, teamId, squadId, 'true'))
-        except CommandFailedError, err:
-            self.warning('Error, server replied %s' % err)
-
 
