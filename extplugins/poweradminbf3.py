@@ -31,7 +31,10 @@
 #   renamed 'swap_no_level_check' to 'no_level_check_level' and this option now also applies to the !changeteam command
 #   add commands !scramble, !scramblemode, !autoscramble
 # 0.8.1 - fix crash with 0.8
-__version__ = '0.8.1'
+# 0.8.2 - fix issue #17 with !loadconfig
+import re
+
+__version__ = '0.8.2'
 __author__  = 'Courgette'
 
 import random
@@ -136,7 +139,7 @@ class Poweradminbf3Plugin(Plugin):
 
 ################################################################################################################
 #
-#    Parser interface implementation
+#    Plugin interface implementation
 #
 ################################################################################################################
 
@@ -625,41 +628,58 @@ class Poweradminbf3Plugin(Plugin):
             self.load_server_config(client, config_name, lines)
 
 
-    def load_server_config(self, client, config_name, items=[]):
+    def load_server_config(self, client, config_name, items=None):
         """
         Clean up the lines in the config and send them to the server
         """
-        _isMap = False
+        if items is None:
+            return
+
+        re_cvar = re.compile(r'^\s*(?P<cvar>vars\.[^\s]+)(\s+(?P<value>.*))?$')
+        re_maplist_item = re.compile(r'^\s*(?P<map_id>\w+)\s+(?P<gamemode>\w+)\s+(?P<num_rounds>\d+)\s*$')
+
+        cvars_matches = []
+        map_item_matches = []
+
+        line_index = 0
         for line in items:
-            line = line.strip()
-            if len(line) > 1:
-                #execute the command
-                w = line.split()
-                if len(w) > 2:
-                    #this must be a map
-                    if not _isMap:
-                        self.console.write(('mapList.clear',)) # clear current in-memory map rotation list
-                        _isMap = True
-                    if len(w) == 3:
-                        try:
-                            self.console.write(('mapList.add', w[0], w[1], w[2]))
-                        except CommandFailedError, err:
-                            client.message("Error sending \"%s\" to server. %s" % (line, err.message))
-                    elif len(w) == 4:
-                        try:
-                            self.console.write(('mapList.add', w[0], w[1], w[2], w[3]))
-                        except CommandFailedError, err:
-                            client.message("Error sending \"%s\" to server. %s" % (line, err.message))
-                else:
-                    try:
-                        self.console.write((w[0], w[1]))
-                    except CommandFailedError, err:
-                        client.message("Error sending %r to server. %s" % (w, err.message))
-        if _isMap:
+            line_index += 1
+            match = re_cvar.search(line.strip())
+            if match:
+                cvars_matches.append((line_index, line, match))
+                continue
+            match = re_maplist_item.search(line.strip())
+            if match:
+                map_item_matches.append((line_index, line, match))
+
+        for line_index, line, m in cvars_matches:
+            if m.group('value'):
+                # set cvar
+                try:
+                    self.console.write((m.group('cvar'), m.group('value')))
+                except CommandFailedError, err:
+                    client.message('Error "%s" received at line %s when sending "%s" to server' % (err.message, line_index, line))
+            else:
+                # read cvar
+                try:
+                    result = self.console.write((m.group('cvar'),))
+                    if len(result):
+                        client.message("%s is \"%s\"" % (m.group('cvar'), result[0]))
+                except CommandFailedError, err:
+                    client.message('Error "%s" received at line %s when sending "%s" to server' % (err.message, line_index, m.group('cvar')))
+
+        if len(map_item_matches):
+            self.console.write(('mapList.clear',)) # clear current in-memory map rotation list
+            for line_index, line, m in map_item_matches:
+                try:
+                    self.console.write(('mapList.add', m.group('map_id'), m.group('gamemode'), m.group('num_rounds')))
+                except CommandFailedError, err:
+                    client.message("Error adding map \"%s\" on line %s : %s" % (line, line_index, err.message))
             try:
                 self.console.write(('mapList.save',)) # write current in-memory map list to server config file so if the server restarts our list is recovered.
                 client.message("New map rotation list written to disk.")
             except CommandFailedError, err:
-                client.message("Error writting map rotation list to disk. %s" % err.message)
+                client.message("Error writing map rotation list to disk. %s" % err.message)
+
         client.message("New config \"%s\" loaded" % config_name)
 
