@@ -17,6 +17,7 @@
 
         <set name="punkbuster-pb">100</set>
 
+        <set name="listconfig">60</set>
         <set name="loadconfig">60</set>
 
         <set name="roundnext-rnext">40</set>

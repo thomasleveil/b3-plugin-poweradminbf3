@@ -32,6 +32,7 @@
 #   add commands !scramble, !scramblemode, !autoscramble
 # 0.8.1 - fix crash with 0.8
 # 0.8.2 - fix issue #17 with !loadconfig
+# - add command !listconfig
 import re
 
 __version__ = '0.8.2'
@@ -41,6 +42,7 @@ import random
 import time
 import os
 import thread
+import string
 import b3
 import b3.events
 from b3.plugin import Plugin
@@ -497,6 +499,47 @@ class Poweradminbf3Plugin(Plugin):
                 except Exception, msg:
                     self.error('Error loading config: %s' % msg)
                     client.message("Error while loading config")
+
+    def cmd_listconfig(self, data, client=None, cmd=None):
+        """\
+        List available config files
+        """
+        config_files = []
+
+        #get config dir
+        config_dir = None
+        _cDir = self._configPath
+        if os.path.isdir(_cDir):
+            config_dir = _cDir
+        else:
+            self.debug('Cannot find directory %s' % _cDir)
+            if hasattr(self.config, 'fileName') and self.config.fileName:
+                # try _configPath within config dir
+                _cDir = os.path.dirname(self.config.fileName) + os.path.sep + self._configPath
+                if os.path.isdir(_cDir):
+                    config_dir = _cDir
+                else:
+                    self.debug('Cannot find directory %s' % _cDir)
+                    #finally check plugin conf folder for config files
+                    _cDir = os.path.dirname(self.config.fileName)
+                    self.debug('Checking %s for config files' % _cDir)
+                    if os.path.isdir(_cDir):
+                        config_dir = _cDir
+
+        if config_dir is None:
+            client.message("Cannot find server config directory")
+        else:
+            filenames = os.listdir(config_dir)
+            for filename in filenames:
+                if filename.endswith('.cfg'):
+                    filename = filename.split('.')
+                    config_files.append(filename[0])
+
+            if not config_files:
+                client.message('No server config files found')
+                return False
+            else:
+                client.message('^3Available config files:^7 %s' % string.join(config_files, ', '))
 
     def cmd_scramble(self, data, client, cmd=None):
         """\
