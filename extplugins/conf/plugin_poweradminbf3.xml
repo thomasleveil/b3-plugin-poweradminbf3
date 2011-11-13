@@ -15,7 +15,7 @@
             defining the command level below.
           -->
 
-        <set name="punkbuster-pb">100</set>
+        <set name="punkbuster-punk">100</set>
 
         <set name="listconfig">60</set>
         <set name="loadconfig">60</set>
