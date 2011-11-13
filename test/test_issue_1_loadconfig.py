@@ -26,8 +26,6 @@ p = Poweradminbf3Plugin(fakeConsole, conf)
 p.onLoadConfig()
 p.onStartup()
 
-time.sleep(1)
-
 admin.connects(2)
-time.sleep(1)
 admin.says('!loadconfig hardcore-tdm')
+time.sleep(2)

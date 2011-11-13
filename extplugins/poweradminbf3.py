@@ -42,7 +42,6 @@ import random
 import time
 import os
 import thread
-import string
 import b3
 import b3.events
 from b3.plugin import Plugin
@@ -150,41 +149,9 @@ class Poweradminbf3Plugin(Plugin):
         This is called after loadConfig(). Any plugin private variables loaded
         from the config need to be reset here.
         """
-
-        # initialize messages
-        try:
-            self.getMessage('operation_denied_level', {'name': '', 'group': ''})
-        except NoOptionError:
-            self._messages['operation_denied_level'] = "Operation denied because %(name)s is in the %(group)s group"
-
-        try:
-            self.getMessage('operation_denied')
-        except NoOptionError:
-            self._messages['operation_denied'] = "Operation denied"
-
-        try:
-            self._configPath = self.config.getpath('preferences', 'config_path')
-            self.info('Path = %s' % self._configPath)
-        except NoOptionError:
-            if hasattr(self.config, 'fileName') and self.config.fileName:
-                # try in plugin conf folder instead
-                tmpdir = os.path.dirname(self.config.fileName)
-                if os.path.isdir(tmpdir):
-                    self._configPath = tmpdir
-                else:
-                    self.error('Unable to load config path from config file')
-
-        try:
-            self.no_level_check_level = self.config.getint('preferences', 'no_level_check_level')
-        except NoOptionError:
-            self.info('No config option \"preferences\\no_level_check_level\" found. Using default value : %s' % self.no_level_check_level)
-        except ValueError, err:
-            self.debug(err)
-            self.warning('Could not read level value from config option \"preferences\\no_level_check_level\". Using default value \"%s\" instead. (%s)' % (self.no_level_check_level, err))
-        except Exception, err:
-            self.error(err)
-        self.info('no_level_check_level is %s' % self.no_level_check_level)
-
+        self._load_messages()
+        self._load_config_path()
+        self._load_no_level_check_level()
         self._load_scrambler()
 
     def startup(self):
@@ -400,7 +367,7 @@ class Poweradminbf3Plugin(Plugin):
 
             self.debug('Executing punkbuster command = [%s]', data)
             try:
-                response = self.console.write(('punkBuster.pb_sv_command', '%s' % data))
+                self.console.write(('punkBuster.pb_sv_command', '%s' % data))
             except CommandFailedError, err:
                 self.error(err)
                 client.message('Error: %s' % err.message)
@@ -460,37 +427,18 @@ class Poweradminbf3Plugin(Plugin):
 
     def cmd_loadconfig(self, data, client=None, cmd=None):
         """\
-        <preset> - Change mode to given preset (normal, hardcore, infantry, ...)
+        <config name> - Load a server config file
         """
-        if not data:
+        if self._configPath is None:
+            client.message("The directory containing the config files is unknown, check the plugin configuration file")
+        elif not data:
             client.message('Invalid or missing data, try !help loadconfig')
         elif '/' in data or '../' in data:
             client.message('Invalid data, try !help loadconfig')
         else:
-            file_name = None
-            # contsruct filename
             _fName = self._configPath + os.path.sep + unicode(data) + '.cfg'
             self.verbose(_fName)
-            if os.path.isfile(_fName):
-                file_name = _fName
-            else:
-                self.debug('File %s does not exist!' % _fName)
-                if hasattr(self.config, 'fileName') and self.config.fileName:
-                    # try in plugin conf folder instead
-                    _fName = os.path.dirname(self.config.fileName) + os.path.sep + unicode(data) + '.cfg'
-                    if os.path.isfile(_fName):
-                        file_name = _fName
-                    else:
-                        self.debug('File %s does not exist!' % _fName)
-                        # try _configPath within config dir
-                        dir_path = os.path.dirname(self.config.fileName) + os.path.sep + self._configPath
-                        if os.path.isdir(dir_path):
-                            _fName =  dir_path + os.path.sep + unicode(data) + '.cfg'
-                            if os.path.isfile(_fName):
-                                file_name = _fName
-                            else:
-                                self.debug('File %s does not exist!' % _fName)
-            if file_name is None:
+            if not os.path.isfile(_fName):
                 client.message("Cannot find any config file named %s.cfg" % data)
             else:
                 client.message("Loading config %s ..." % data)
@@ -502,44 +450,23 @@ class Poweradminbf3Plugin(Plugin):
 
     def cmd_listconfig(self, data, client=None, cmd=None):
         """\
-        List available config files
+        List available config files that can be loaded with the !loadconfig command
         """
-        config_files = []
-
-        #get config dir
-        config_dir = None
-        _cDir = self._configPath
-        if os.path.isdir(_cDir):
-            config_dir = _cDir
+        if self._configPath is None:
+            client.message("The directory containing the config files is unknown, check the plugin configuration file")
         else:
-            self.debug('Cannot find directory %s' % _cDir)
-            if hasattr(self.config, 'fileName') and self.config.fileName:
-                # try _configPath within config dir
-                _cDir = os.path.dirname(self.config.fileName) + os.path.sep + self._configPath
-                if os.path.isdir(_cDir):
-                    config_dir = _cDir
-                else:
-                    self.debug('Cannot find directory %s' % _cDir)
-                    #finally check plugin conf folder for config files
-                    _cDir = os.path.dirname(self.config.fileName)
-                    self.debug('Checking %s for config files' % _cDir)
-                    if os.path.isdir(_cDir):
-                        config_dir = _cDir
-
-        if config_dir is None:
-            client.message("Cannot find server config directory")
-        else:
-            filenames = os.listdir(config_dir)
+            self.info("looking for config files in directory : %s" % self._configPath)
+            config_files = []
+            filenames = os.listdir(self._configPath)
             for filename in filenames:
                 if filename.endswith('.cfg'):
                     filename = filename.split('.')
-                    config_files.append(filename[0])
+                    config_files.append('.'.join(filename[:-1]))
 
             if not config_files:
                 client.message('No server config files found')
-                return False
             else:
-                client.message('^3Available config files:^7 %s' % string.join(config_files, ', '))
+                client.message('^3Available config files:^7 %s' % ', '.join(config_files))
 
     def cmd_scramble(self, data, client, cmd=None):
         """\
@@ -626,6 +553,46 @@ class Poweradminbf3Plugin(Plugin):
             self._autoscramble_maps = False
             self.warning('Using default value (off) for auto scrambling mode')
 
+    def _load_messages(self):
+        """Loads the messages section from the plugin config file"""
+        try:
+            self.getMessage('operation_denied_level', {'name': '', 'group': ''})
+        except NoOptionError:
+            self._messages['operation_denied_level'] = "Operation denied because %(name)s is in the %(group)s group"
+
+        try:
+            self.getMessage('operation_denied')
+        except NoOptionError:
+            self._messages['operation_denied'] = "Operation denied"
+
+    def _load_config_path(self):
+        try:
+            tmp_path = self.config.getpath('preferences', 'config_path')
+            if os.path.isdir(tmp_path):
+                self._configPath = tmp_path
+            else:
+                self._configPath = self._get_server_config_directory(tmp_path)
+        except NoOptionError:
+            self._configPath = self._get_server_config_directory('serverconfigs')
+        if self._configPath is None:
+            self.error('Could not find the server config files directory. Update your config file with an existing directory name in option "config_path" of section "preferences".')
+        else:
+            self.info("Server config files directory : %s" % self._configPath)
+
+    def _load_no_level_check_level(self):
+        try:
+            self.no_level_check_level = self.config.getint('preferences', 'no_level_check_level')
+        except NoOptionError:
+            self.info('No config option \"preferences\\no_level_check_level\" found. Using default value : %s' % self.no_level_check_level)
+        except ValueError, err:
+            self.debug(err)
+            self.warning('Could not read level value from config option \"preferences\\no_level_check_level\". Using default value \"%s\" instead. (%s)' % (self.no_level_check_level, err))
+        except Exception, err:
+            self.error(err)
+        self.info('no_level_check_level is %s' % self.no_level_check_level)
+
+
+
     def _getCmd(self, cmd):
         cmd = 'cmd_%s' % cmd
         if hasattr(self, cmd):
@@ -653,6 +620,29 @@ class Poweradminbf3Plugin(Plugin):
         except CommandFailedError, err:
             self.warning('Error, server replied %s' % err)
 
+    def _get_server_config_directory(self, dir_name=''):
+        """returns an existing absolute directory path supposed to contain some game server config files.
+        Actual directory if found by checking the existence of :
+            dir_name
+            <plugin config folder>/dir_name
+            <B3 config directory>/dir_name
+        If no directory found, returns None
+        """
+        if os.path.isdir(dir_name):
+            return os.path.normpath(dir_name)
+        if hasattr(self.config, 'fileName') and self.config.fileName:
+            # the plugin config was loaded from a file
+            plugin_config_directory = os.path.dirname(self.config.fileName)
+            tmp_dir = os.path.join(plugin_config_directory, dir_name)
+            if os.path.isdir(tmp_dir):
+                return os.path.normpath(tmp_dir)
+        if hasattr(self.console.config, 'fileName') and self.console.config.fileName:
+            # the B3 config was loaded from a file
+            b3_config_directory = os.path.dirname(self.console.config.fileName)
+            tmp_dir = os.path.join(b3_config_directory, dir_name)
+            if os.path.isdir(tmp_dir):
+                return os.path.normpath(tmp_dir)
+        return None
 
     def _load_server_config_from_file(self, client, config_name, file_path, threaded=False):
         """
@@ -669,7 +659,6 @@ class Poweradminbf3Plugin(Plugin):
             thread.start_new_thread(self.load_server_config, (client, config_name, lines))
         else:
             self.load_server_config(client, config_name, lines)
-
 
     def load_server_config(self, client, config_name, items=None):
         """

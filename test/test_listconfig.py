@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-import time, os
+import os
 from test import prepare_fakeparser_for_tests
 prepare_fakeparser_for_tests()
 
@@ -26,8 +26,5 @@ p = Poweradminbf3Plugin(fakeConsole, conf)
 p.onLoadConfig()
 p.onStartup()
 
-time.sleep(1)
-
 admin.connects(2)
-time.sleep(1)
 admin.says('!listconfig')

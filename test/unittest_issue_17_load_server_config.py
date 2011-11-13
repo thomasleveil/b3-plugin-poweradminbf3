@@ -2,7 +2,6 @@
 import unittest
 from mock import Mock # http://www.voidspace.org.uk/python/mock/mock.html
 from test import extends_mock
-from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
 
 extends_mock()
