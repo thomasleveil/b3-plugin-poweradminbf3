@@ -34,6 +34,7 @@
 # 0.8.2 - fix issue #17 with !loadconfig
 # - add command !listconfig
 import re
+from b3.functions import soundex, levenshteinDistance
 
 __version__ = '0.8.2'
 __author__  = 'Courgette'
@@ -436,14 +437,17 @@ class Poweradminbf3Plugin(Plugin):
         elif '/' in data or '../' in data:
             client.message('Invalid data, try !help loadconfig')
         else:
-            _fName = self._configPath + os.path.sep + unicode(data) + '.cfg'
-            self.verbose(_fName)
-            if not os.path.isfile(_fName):
+            found_names = self._getConfigSoundingLike(data)
+            if not len(found_names):
                 client.message("Cannot find any config file named %s.cfg" % data)
+            elif len(found_names) > 1:
+                client.message("Do you mean : %s ?" % ", ".join(found_names[:5]))
             else:
+                _fName = self._configPath + os.path.sep + found_names[0] + '.cfg'
+                self.verbose(_fName)
                 client.message("Loading config %s ..." % data)
                 try:
-                    self._load_server_config_from_file(client, config_name=data, file_path=_fName, threaded=True)
+                    self._load_server_config_from_file(client, config_name=found_names[0], file_path=_fName, threaded=True)
                 except Exception, msg:
                     self.error('Error loading config: %s' % msg)
                     client.message("Error while loading config")
@@ -455,14 +459,7 @@ class Poweradminbf3Plugin(Plugin):
         if self._configPath is None:
             client.message("The directory containing the config files is unknown, check the plugin configuration file")
         else:
-            self.info("looking for config files in directory : %s" % self._configPath)
-            config_files = []
-            filenames = os.listdir(self._configPath)
-            for filename in filenames:
-                if filename.endswith('.cfg'):
-                    filename = filename.split('.')
-                    config_files.append('.'.join(filename[:-1]))
-
+            config_files = self._list_available_server_config_files()
             if not config_files:
                 client.message('No server config files found')
             else:
@@ -715,3 +712,43 @@ class Poweradminbf3Plugin(Plugin):
 
         client.message("New config \"%s\" loaded" % config_name)
 
+    def _list_available_server_config_files(self):
+        self.info("looking for config files in directory : %s" % self._configPath)
+        config_files = []
+        filenames = os.listdir(self._configPath)
+        for filename in filenames:
+            if filename.endswith('.cfg'):
+                filename = filename.split('.')
+                config_files.append('.'.join(filename[:-1]))
+        return config_files
+
+    def _getConfigSoundingLike(self, config_name):
+        """return a list of existing server config names sounding like config_name"""
+        available_configs = self._list_available_server_config_files()
+
+        clean_config_name = config_name.strip().lower()
+
+        # exact match
+        if clean_config_name in available_configs:
+            return [clean_config_name]
+
+        # substring match
+        matching_subset = [x for x in available_configs if clean_config_name in x.lower()]
+        if len(matching_subset) == 1:
+            matches = [matching_subset[0]]
+        elif len(matching_subset) > 1:
+            matches = matching_subset
+        else:
+            # no luck with subset search, fallback on soundex magic
+            soundex_query = soundex(clean_config_name)
+            matches = [name for name in available_configs if soundex(name) == soundex_query]
+
+        # got nothing ? suggest available config names
+        if not len(matches):
+            matches = available_configs
+
+        # order what we came up with by levenshtein distance
+        if len(matches):
+            matches.sort(key=lambda name: levenshteinDistance(clean_config_name, name))
+
+        return matches

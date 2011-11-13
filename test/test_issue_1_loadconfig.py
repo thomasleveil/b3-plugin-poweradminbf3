@@ -29,3 +29,6 @@ p.onStartup()
 admin.connects(2)
 admin.says('!loadconfig hardcore-tdm')
 time.sleep(2)
+
+admin.says('!loadconfig hardcore-')
+time.sleep(2)
