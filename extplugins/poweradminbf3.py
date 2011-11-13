@@ -32,11 +32,11 @@
 #   add commands !scramble, !scramblemode, !autoscramble
 # 0.8.1 - fix crash with 0.8
 # 0.8.2 - fix issue #17 with !loadconfig
-# - add command !listconfig
+# 0.9   - add command !listconfig, !loadconfig can understand mis-spelt names and suggest config names
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.8.2'
+__version__ = '0.9'
 __author__  = 'Courgette'
 
 import random
