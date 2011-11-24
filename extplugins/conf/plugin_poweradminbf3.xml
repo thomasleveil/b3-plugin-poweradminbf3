@@ -65,7 +65,7 @@
         <set name="strategy">random</set>
 	</settings>
 	<settings name="configmanager">
-		<!-- Configmanager setting enables you to load different server config files from serverconfigs folder
+		<!-- Configmanager setting enables you to load different server config files from 'configmanager' folder
 			 based on gametypes/maps. (Ported from xlr8or's config manager plugin for cod series)
 
 			 It will first look if a b3_<gametype>_<mapname>.cfg exists (example: b3_teamdeathmatch0_mp001.cfg)

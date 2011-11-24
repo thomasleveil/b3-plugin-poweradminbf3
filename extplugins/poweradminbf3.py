@@ -131,6 +131,7 @@ class Poweradminbf3Plugin(Plugin):
     def __init__(self, console, config=None):
         self._adminPlugin = None
         self._configPath = ''
+        self._configManager_configPath = ''
         self.no_level_check_level = 100
         self._configmanager_delay = 5
         self._scrambling_planned = False
@@ -156,6 +157,7 @@ class Poweradminbf3Plugin(Plugin):
         self._load_config_path()
         self._load_no_level_check_level()
         self._load_scrambler()
+        self._load_configmanager_config_path()
         self._load_configmanager()
 
     def startup(self):
@@ -584,6 +586,13 @@ class Poweradminbf3Plugin(Plugin):
         else:
             self.info("Server config files directory : %s" % self._configPath)
 
+    def _load_configmanager_config_path(self):
+        self._configManager_configPath = self._get_server_config_directory('configmanager')
+        if self._configManager_configPath is None:
+            self.error('Could not find the configmanager directory. Create a directory named \'configmanager\' next to your plugin config file')
+        else:
+            self.info("ConfigManager directory : %s" % self._configManager_configPath)
+
     def _load_no_level_check_level(self):
         try:
             self.no_level_check_level = self.config.getint('preferences', 'no_level_check_level')
@@ -659,12 +668,12 @@ class Poweradminbf3Plugin(Plugin):
         """
         Loads a preset config file to send to the server
         """
-        self.verbose('Loading %s' % file_path)
+        self.info('Loading %s' % file_path)
 
         lines = []
         with file(file_path, 'r') as f:
             lines = f.readlines()
-        self.verbose(repr(lines))
+        #self.verbose(repr(lines))
         if threaded:
             #delegate communication with the server to a new thread
             thread.start_new_thread(self.load_server_config, (client, config_name, lines))
@@ -783,18 +792,18 @@ class Poweradminbf3Plugin(Plugin):
         """
         Check and run the configs
         """
-        if os.path.isfile(self._configPath + os.path.sep + self._typeandmap + '.cfg'): # b3_<gametype>_<mapname>.cfg
-            _fName = self._configPath + os.path.sep + self._typeandmap + '.cfg'
+        if os.path.isfile(self._configManager_configPath + os.path.sep + self._typeandmap + '.cfg'): # b3_<gametype>_<mapname>.cfg
+            _fName = self._configManager_configPath + os.path.sep + self._typeandmap + '.cfg'
             self.debug('Executing %s.cfg' %(self._typeandmap))
             self._load_server_config_from_file(client=None, config_name=self._typeandmap, file_path=_fName, threaded=True)
 
-        elif os.path.isfile(self._configPath + os.path.sep + self._gametype + '.cfg'): # b3_<gametype>.cfg
-            _fName = self._configPath + os.path.sep + self._gametype + '.cfg'
+        elif os.path.isfile(self._configManager_configPath + os.path.sep + self._gametype + '.cfg'): # b3_<gametype>.cfg
+            _fName = self._configManager_configPath + os.path.sep + self._gametype + '.cfg'
             self.debug('Executing %s.cfg' %(self._gametype))
             self._load_server_config_from_file(client=None, config_name=self._gametype, file_path=_fName, threaded=True)
 
-        elif os.path.isfile(self._configPath + os.path.sep + 'b3_main'): # b3_main.cfg
-            _fName = self._configPath + os.path.sep + 'b3_main.cfg'
+        elif os.path.isfile(self._configManager_configPath + os.path.sep + 'b3_main.cfg'): # b3_main.cfg
+            _fName = self._configManager_configPath + os.path.sep + 'b3_main.cfg'
             self.debug('Executing b3_main.cfg')
             self._load_server_config_from_file(client=None, config_name='b3_main.cfg', file_path=_fName, threaded=True)
 
