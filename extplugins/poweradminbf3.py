@@ -33,11 +33,11 @@
 # 0.8.1 - fix crash with 0.8
 # 0.8.2 - fix issue #17 with !loadconfig
 # 0.9   - add command !listconfig, !loadconfig can understand mis-spelt names and suggest config names
-# 0.X - ported xlr8or's configmanager plugin for cod series. Automagically loads server config files based on maps/gamemodes
+# 0.10  - ported xlr8or's configmanager plugin for cod series. Automagically loads server config files based on maps/gamemodes
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.9'
+__version__ = '0.10'
 __author__  = 'Courgette'
 
 import random

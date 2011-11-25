@@ -34,6 +34,12 @@ Commands
 !autoscramble <off/round/map> - set the auto-scrambling mode
 
 
+Other features
+--------------
+
+- can automatically load server config scripts at each map change based on current gamemode and/or map
+
+
 Support
 -------
 
