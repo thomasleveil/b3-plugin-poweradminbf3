@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 import unittest
 from mock import Mock # http://www.voidspace.org.uk/python/mock/mock.html
-from test import extends_mock
+from tests import extends_mock
 from poweradminbf3 import Poweradminbf3Plugin
 
 extends_mock()

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-from test import prepare_fakeparser_for_tests
+from tests import prepare_fakeparser_for_tests
 prepare_fakeparser_for_tests()
 
 from b3.fake import fakeConsole, joe, simon, superadmin, FakeClient

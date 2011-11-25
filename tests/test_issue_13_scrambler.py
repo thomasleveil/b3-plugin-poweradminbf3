@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-from test import prepare_fakeparser_for_tests
+from tests import prepare_fakeparser_for_tests
 import time
 import b3
 from b3.parsers.frostbite2.util import PlayerInfoBlock
