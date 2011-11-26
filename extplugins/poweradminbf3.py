@@ -37,7 +37,7 @@
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.10'
+__version__ = '0.11'
 __author__  = 'Courgette'
 
 import random
