@@ -34,10 +34,11 @@
 # 0.8.2 - fix issue #17 with !loadconfig
 # 0.9   - add command !listconfig, !loadconfig can understand mis-spelt names and suggest config names
 # 0.10  - ported xlr8or's configmanager plugin for cod series. Automagically loads server config files based on maps/gamemodes
+# 0.11.1 - added Auto Assign
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.11'
+__version__ = '0.11.1'
 __author__  = 'Courgette'
 
 import random
@@ -134,6 +135,9 @@ class Poweradminbf3Plugin(Plugin):
         self._configManager_configPath = ''
         self.no_level_check_level = 100
         self._configmanager_delay = 5
+        self._autoassign = True
+        self._no_autoassign_level = 20
+        self._scramblingdone = False
         self._scrambling_planned = False
         self._autoscramble_rounds = False
         self._autoscramble_maps = False
@@ -156,6 +160,7 @@ class Poweradminbf3Plugin(Plugin):
         self._load_messages()
         self._load_config_path()
         self._load_no_level_check_level()
+        self._load_autoassign_settings()
         self._load_scrambler()
         self._load_configmanager_config_path()
         self._load_configmanager()
@@ -177,6 +182,7 @@ class Poweradminbf3Plugin(Plugin):
         self.registerEvent(b3.events.EVT_GAME_ROUND_PLAYER_SCORES)
         self.registerEvent(b3.events.EVT_CLIENT_AUTH)
         self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
+        self.registerEvent(b3.events.EVT_CLIENT_TEAM_CHANGE)
 
 
     def onEvent(self, event):
@@ -185,6 +191,7 @@ class Poweradminbf3Plugin(Plugin):
         """
         if event.type == b3.events.EVT_GAME_ROUND_PLAYER_SCORES:
             self._scrambler.onRoundOverTeamScores(event.data)
+            self._scramblingdone = False
         elif event.type == b3.events.EVT_GAME_ROUND_START:
             self.debug('manual scramble planned : '.rjust(30) + str(self._scrambling_planned))
             self.debug('auto scramble rounds : '.rjust(30) + str(self._autoscramble_rounds))
@@ -206,6 +213,16 @@ class Poweradminbf3Plugin(Plugin):
                 self.config_manager_construct_file_names()
                 time.sleep(self._configmanager_delay)
                 self.config_manager_check_config()
+        
+            self._scramblingdone = True
+        
+        elif event.type == b3.events.EVT_CLIENT_AUTH:
+            if self._autoassign and self._scramblingdone:
+                self.autoassign(event.client)
+                
+        elif event.type == b3.events.EVT_CLIENT_TEAM_CHANGE:
+            if self._autoassign and self._scramblingdone:
+                self.autoassign(event.client)
 
 
 ################################################################################################################
@@ -524,6 +541,25 @@ class Poweradminbf3Plugin(Plugin):
             else:
                 client.message("invalid data. Expecting one of [off, round, map]")
 
+    def cmd_autoassign(self, data, client, cmd=None):
+        """\
+        <off|on> manage the auto assign
+        """
+        if not data:
+            if self._autoassign:
+                client.message("Autoassign is currently on, use !autoassign off to turn off")
+            else:
+                client.message("Autoassign is currently off, use !autoassign on to turn on")
+        else:
+            if data.lower() == 'off':
+                self._autoassign = False
+                client.message('Auto Assign now disabled')
+            elif data.lower() == 'on':
+                self._autoassign = True
+                client.message('Auto assign now enabled')
+            else:
+                client.message("invalid data. Expecting on or off]")
+                
 ################################################################################################################
 #
 #    Other methods
@@ -605,6 +641,29 @@ class Poweradminbf3Plugin(Plugin):
             self.error(err)
         self.info('no_level_check_level is %s' % self.no_level_check_level)
 
+    def _load_autoassign_settings(self):
+        try:
+            self.no_autoassign_level = self.config.getint('preferences', 'no_autoassign_level')
+        except NoOptionError:
+            self.info('No config option \"preferences\\no_autoassign_level\" found. Using default value : %s' % self.no_autoassign_level)
+        except ValueError, err:
+            self.debug(err)
+            self.warning('Could not read level value from config option \"preferences\\no_autoassign_level\". Using default value \"%s\" instead. (%s)' % (self.no_autoassign_level, err))
+        except Exception, err:
+            self.error(err)
+        self.info('no_autoassign_level is %s' % self.no_autoassign_level)
+        
+        try:
+            self._autoassign = self.config.getboolean('preferences', 'autoassign')
+        except NoOptionError:
+            self.info('No config option \"preferences\\autoassign\" found. Using default value : %s' % self._autoassign)
+        except ValueError, err:
+            self.debug(err)
+            self.warning('Could not read level value from config option \"preferences\\autoassign\". Using default value \"%s\" instead. (%s)' % (self._autoassign, err))
+        except Exception, err:
+            self.error(err)
+        self.info('autoassign is %s' % self._autoassign)
+        
     def _load_configmanager(self):
         try:
             self._configmanager = self.config.getboolean('configmanager', 'status')
@@ -818,3 +877,31 @@ class Poweradminbf3Plugin(Plugin):
             client.message(msg)
         else:
             self.debug(msg)
+            
+    def autoassign(self, client):
+        self.debug('Starting Autoassign for %s' % client.name)
+        if client.maxLevel > self._no_autoassign_level:
+            return
+        clients = self.console.clients.getList()
+        if len(clients)<=3:
+            return
+        team1 = 0
+        team2 = 0
+        for cl in clients:
+            if cl.teamId == 1:
+                team1 = team1 + 1
+            if cl.teamId == 2:
+                team2 = team2 + 1
+        self.debug('Team1 = %s' % team1)
+        self.debug('Team2 = %s' % team2)
+        self.debug('New Client team is %s' % client.teamId)
+        if team1 - team2 > 1 and client.teamId == 1:
+            self.debug('Move player to team 2')
+            self._movePlayer(client, 2)
+            
+        elif team2 - team1 > 1 and client.teamId == 2:
+            self.debug('Move player to team 1')
+            self._movePlayer(client, 1)
+        else:
+            self.debug('Noone needs moving')
+        

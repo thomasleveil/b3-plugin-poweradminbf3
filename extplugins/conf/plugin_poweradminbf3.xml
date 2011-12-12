@@ -31,6 +31,8 @@
         <set name="scramble">20</set>
         <set name="scramblemode">20</set>
         <set name="autoscramble">20</set>
+
+        <set name="autoassign">20</set>
     </settings>
 
     <settings name="messages">
@@ -50,6 +52,9 @@
             This applies to commands !swap and !changeteam
          -->
         <set name="no_level_check_level">60</set>
+        <!-- no_autoassign_level : Players this level and above will not be auto assigned-->
+        <set name="no_autoassign_level">20</set>
+        <set name="autoassign">On</set>
 	</settings>
 
     <settings name="scrambler">
