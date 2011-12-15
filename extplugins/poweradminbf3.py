@@ -34,6 +34,8 @@
 # 0.8.2 - fix issue #17 with !loadconfig
 # 0.9   - add command !listconfig, !loadconfig can understand mis-spelt names and suggest config names
 # 0.10  - ported xlr8or's configmanager plugin for cod series. Automagically loads server config files based on maps/gamemodes
+# 0.11  - fix issue with configmanager examples' filenames
+# 0.12  - add command !unlockmode
 import re
 from b3.functions import soundex, levenshteinDistance
 

@@ -32,6 +32,7 @@ Commands
 !scramble - (un)request scrambler to scramble teams at next round
 !scramblemode <random/score> - set the scrambling strategy
 !autoscramble <off/round/map> - set the auto-scrambling mode
+!unlockmode <all|common|stats|none> - set the weapons unlocks
 
 
 Other features
