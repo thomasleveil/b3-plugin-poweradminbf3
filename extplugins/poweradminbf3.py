@@ -51,6 +51,7 @@ from b3.plugin import Plugin
 from ConfigParser import NoOptionError
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock, PlayerInfoBlock
+import b3.cron
 
 
 class Scrambler:
@@ -135,8 +136,15 @@ class Poweradminbf3Plugin(Plugin):
         self._configManager_configPath = ''
         self.no_level_check_level = 100
         self._configmanager_delay = 5
-        self._autoassign = True
+        self._team_swap_threshold = 3
+        self._autoassign = False
         self._no_autoassign_level = 20
+        self._joined_order = []
+        self._autobalance = False
+        self._run_autobalancer = False
+        self._one_round_over = False
+        self._autobalance_timer = 60
+        self._cronTab_autobalance = None
         self._scramblingdone = False
         self._scrambling_planned = False
         self._autoscramble_rounds = False
@@ -160,11 +168,11 @@ class Poweradminbf3Plugin(Plugin):
         self._load_messages()
         self._load_config_path()
         self._load_no_level_check_level()
-        self._load_autoassign_settings()
+        self._load_autobalance_settings()
         self._load_scrambler()
         self._load_configmanager_config_path()
         self._load_configmanager()
-
+        
     def startup(self):
         """\
         Initialize plugin settings
@@ -179,10 +187,13 @@ class Poweradminbf3Plugin(Plugin):
 
         # Register our events
         self.registerEvent(b3.events.EVT_GAME_ROUND_START)
+        self.registerEvent(b3.events.EVT_GAME_ROUND_END)
         self.registerEvent(b3.events.EVT_GAME_ROUND_PLAYER_SCORES)
         self.registerEvent(b3.events.EVT_CLIENT_AUTH)
         self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
         self.registerEvent(b3.events.EVT_CLIENT_TEAM_CHANGE)
+        
+
 
 
     def onEvent(self, event):
@@ -191,8 +202,12 @@ class Poweradminbf3Plugin(Plugin):
         """
         if event.type == b3.events.EVT_GAME_ROUND_PLAYER_SCORES:
             self._scrambler.onRoundOverTeamScores(event.data)
-            self._scramblingdone = False
+
         elif event.type == b3.events.EVT_GAME_ROUND_START:
+            if self._autobalance:
+                (min, sec) = self.autobalance_time()
+                self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
+                self.console.cron + self._cronTab_autobalance
             self.debug('manual scramble planned : '.rjust(30) + str(self._scrambling_planned))
             self.debug('auto scramble rounds : '.rjust(30) + str(self._autoscramble_rounds))
             self.debug('auto scramble maps : '.rjust(30) + str(self._autoscramble_maps))
@@ -214,15 +229,31 @@ class Poweradminbf3Plugin(Plugin):
                 time.sleep(self._configmanager_delay)
                 self.config_manager_check_config()
         
+            self.debug('Scrambling finished, Autoassign now active')
             self._scramblingdone = True
         
         elif event.type == b3.events.EVT_CLIENT_AUTH:
-            if self._autoassign and self._scramblingdone:
+            self.debug(self.console.upTime())
+            if self._one_round_over and self._autoassign and self._scramblingdone:
                 self.autoassign(event.client)
+            self.client_connect(event.client)
+            
+        elif event.type == b3.events.EVT_CLIENT_DISCONNECT:
+            self.client_disconnect(event.client, event.data)
                 
         elif event.type == b3.events.EVT_CLIENT_TEAM_CHANGE:
-            if self._autoassign and self._scramblingdone:
+            if self._one_round_over and self._autoassign and self._scramblingdone:
                 self.autoassign(event.client)
+
+        elif event.type == b3.events.EVT_GAME_ROUND_END:
+            self._scramblingdone = False
+            self._run_autobalancer = False
+            if self._cronTab_autobalance:
+                # remove existing crontab
+                self.console.cron - self._cronTab_autobalance
+            if not self._one_round_over:
+                self._one_round_over = True
+                self.debug('One round finished, Autoassign and Autobalance now active')
 
 
 ################################################################################################################
@@ -545,6 +576,7 @@ class Poweradminbf3Plugin(Plugin):
         """\
         <off|on> manage the auto assign
         """
+
         if not data:
             if self._autoassign:
                 client.message("Autoassign is currently on, use !autoassign off to turn off")
@@ -554,12 +586,56 @@ class Poweradminbf3Plugin(Plugin):
             if data.lower() == 'off':
                 self._autoassign = False
                 client.message('Auto Assign now disabled')
+                if self._autobalance:
+                    self._autobalance = False
+                    client.message('Auto Balance now disabled')
             elif data.lower() == 'on':
                 self._autoassign = True
                 client.message('Auto assign now enabled')
             else:
                 client.message("invalid data. Expecting on or off]")
                 
+    def cmd_autobalance(self, data, client, cmd=None):
+        """\
+        <off|on> manage the auto balance
+        """
+
+        if not data:
+            if self._autobalance:
+                client.message("Autobalance is currently on, use !autobalance off to turn off")
+            else:
+                client.message("Autobalance is currently off, use !autobalance on to turn on")
+        else:
+            if data.lower() == 'off':
+                self._autobalance = False
+                client.message('Auto balance now disabled')
+                if self._cronTab_autobalance:
+                    # remove existing crontab
+                    self.console.cron - self._cronTab_autobalance
+                    
+            elif data.lower() == 'on':
+                if self._autobalance:
+                    client.message('Auto balance is already enabled')
+                else:
+                    self._autobalance = True
+                    if self._one_round_over:
+                        (min, sec) = self.autobalance_time()
+                        self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
+                        self.console.cron + self._cronTab_autobalance
+                        client.message('Auto balance now enabled')
+                    else:
+                        client.message('Auto balance eill be enabled on next round start')
+                    if not self._autoassign:
+                        self._autoassign = True
+                        client.message('Auto Assign now enabled')
+
+            elif data.lower() == 'now':
+                self.run_autobalance()
+            else:
+                client.message("invalid data. Expecting on, off or now]")
+                
+                
+
 ################################################################################################################
 #
 #    Other methods
@@ -641,7 +717,7 @@ class Poweradminbf3Plugin(Plugin):
             self.error(err)
         self.info('no_level_check_level is %s' % self.no_level_check_level)
 
-    def _load_autoassign_settings(self):
+    def _load_autobalance_settings(self):
         try:
             self.no_autoassign_level = self.config.getint('preferences', 'no_autoassign_level')
         except NoOptionError:
@@ -663,6 +739,49 @@ class Poweradminbf3Plugin(Plugin):
         except Exception, err:
             self.error(err)
         self.info('autoassign is %s' % self._autoassign)
+        
+        try:
+            self._autobalance = self.config.getboolean('preferences', 'autobalance')
+        except NoOptionError:
+            self.info('No config option \"preferences\\autobalance\" found. Using default value : %s' % self._autobalance)
+        except ValueError, err:
+            self.debug(err)
+            self.warning('Could not read level value from config option \"preferences\\autobalance\". Using default value \"%s\" instead. (%s)' % (self._autobalance, err))
+        except Exception, err:
+            self.error(err)
+        self.info('autobalance is %s' % self._autobalance)
+
+        
+        if self._autobalance:
+            if not self._autoassign:
+                self._autoassign = True
+                self.info('Autobalance is ON, so turning Autoassign ON also')
+        
+        try:
+            self._autobalance_timer = self.config.getint('preferences', 'autobalance_timer')
+        except NoOptionError:
+            self.info('No config option \"preferences\\autobalance_timer\" found. Using default value : %s' % self._autobalance_timer)
+        except ValueError, err:
+            self.debug(err)
+            self.warning('Could not read level value from config option \"preferences\\autobalance_timer\". Using default value \"%s\" instead. (%s)' % (self._autobalance_timer, err))
+        except Exception, err:
+            self.error(err)
+        if self._autobalance_timer < 30:
+            self._autobalance_timer = 30
+        self.info('autobalance timer is %s seconds' % self._autobalance_timer)
+        
+        try:
+            self._team_swap_threshold = self.config.getint('preferences', 'team_swap_threshold')
+        except NoOptionError:
+            self.info('No config option \"preferences\\team_swap_threshold\" found. Using default value : %s' % self._team_swap_threshold)
+        except ValueError, err:
+            self.debug(err)
+            self.warning('Could not read level value from config option \"preferences\\team_swap_threshold\". Using default value \"%s\" instead. (%s)' % (self._team_swap_threshold, err))
+        except Exception, err:
+            self.error(err)
+        if self._team_swap_threshold < 2:
+            self._team_swap_threshold = 2
+        self.info('team swap threshold is %s' % self._team_swap_threshold)
         
     def _load_configmanager(self):
         try:
@@ -728,8 +847,8 @@ class Poweradminbf3Plugin(Plugin):
         Loads a preset config file to send to the server
         """
         self.info('Loading %s' % file_path)
-
         lines = []
+
         with file(file_path, 'r') as f:
             lines = f.readlines()
         #self.verbose(repr(lines))
@@ -879,12 +998,113 @@ class Poweradminbf3Plugin(Plugin):
             self.debug(msg)
             
     def autoassign(self, client):
+        """
+        Auto Assign team on joining or changing teams to keep teams balanced
+        """
         self.debug('Starting Autoassign for %s' % client.name)
-        if client.maxLevel > self._no_autoassign_level:
+        if client.maxLevel >= self._no_autoassign_level:
             return
+        clients = self.console.clients.getList()
+        if len(clients) < 3:
+            return
+        team1, team2 = self.count_teams(clients)
+        self.debug('Team1 = %s' % team1)
+        self.debug('Team2 = %s' % team2)
+        self.debug('New Client team is %s' % client.teamId)
+        if team1 - team2 >= (self._team_swap_threshold - 1) and client.teamId == 1:
+            self.debug('Move player to team 2')
+            self._movePlayer(client, 2)
+            
+        elif team2 - team1 >= (self._team_swap_threshold -1) and client.teamId == 2:
+            self.debug('Move player to team 1')
+            self._movePlayer(client, 1)
+        else:
+            self.debug('Noone needs moving')
+            
+    def run_autobalance(self):
+        """
+        Perform Auto balance to keep teams balanced
+        """
+        clients = self.console.clients.getList()
+        if len(clients) < 3:
+            return
+        team1, team2 = self.count_teams(clients)
+        if team1 == team2:
+            return
+            
+        self._run_autobalancer = True
+        self._sendMessage(None, 'Auto balancing teams in 20 seconds')
+        i = 0
+        while i < 10:
+            time.sleep(1)
+            i += 1
+            
+        self._sendMessage(None, 'Auto balancing teams in 10 seconds')
+        i = 0
+        while i < 10:
+            time.sleep(1)
+            i += 1
+        self._sendMessage(None, 'Auto balancing teams')
+        
         clients = self.console.clients.getList()
         if len(clients)<=3:
             return
+        team1, team2 = self.count_teams(clients)
+        team1more = team1 - team2
+        team2more = team2 - team1
+        if team1more < self._team_swap_threshold and team2more < self._team_swap_threshold:
+            return
+        if team1more > 0:
+            players_to_move = team1more//2
+            self.auto_move_players( 1, players_to_move)
+        
+        else:
+            players_to_move = team2more//2
+            self.auto_move_players( 2, players_to_move)
+
+    def automove_players(self, team, players):
+        if team == 1:
+            newteam = 2
+        else:
+            newteam = 1
+            
+        ind = len(self._joined_order)
+        while ind > 0 and players > 0:
+            ind -= 1
+            cl = self._adminPlugin.findClientPrompt(self._joined_order[ind])
+            if cl:
+                if cl.teamId == team and cl.maxLevel <= self._no_autoassign_level:
+                    if self._run_autobalancer:
+                        self._movePlayer(cl, newteam)
+                        players -= 1
+            else:
+                del self._joined_order.remove[ind]
+                
+        if players > 0:
+            self._sendMessage(None, 'Not enough players to move')
+        self._run_autobalancer = False
+        if self._autobalance:
+            (min, sec) = self.autobalance_time()
+            self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
+            self.console.cron + self._cronTab_autobalance
+            
+    def autobalance_time(self):
+        sec = self._autobalance_timer
+        min = int(time.strftime('%M'))
+        sec = sec + int(time.strftime('%S'))
+        while sec > 59:
+            min += 1
+            sec -= 60
+            
+        if min > 59:
+            min -= 60
+            
+        return (min, sec)
+        
+    def count_teams(self, clients):
+        """
+        Return the number of players in each team
+        """
         team1 = 0
         team2 = 0
         for cl in clients:
@@ -892,16 +1112,24 @@ class Poweradminbf3Plugin(Plugin):
                 team1 = team1 + 1
             if cl.teamId == 2:
                 team2 = team2 + 1
-        self.debug('Team1 = %s' % team1)
-        self.debug('Team2 = %s' % team2)
-        self.debug('New Client team is %s' % client.teamId)
-        if team1 - team2 > 1 and client.teamId == 1:
-            self.debug('Move player to team 2')
-            self._movePlayer(client, 2)
-            
-        elif team2 - team1 > 1 and client.teamId == 2:
-            self.debug('Move player to team 1')
-            self._movePlayer(client, 1)
-        else:
-            self.debug('Noone needs moving')
+        return (team1, team2)
+
+    def client_connect(self, client):
+        """
+        Add client to joined order list
+        """
+        self._joined_order.append(client.name)
+        
+    def client_disconnect(self, client, client_name):
+        """
+        Remove client from joined order list
+        """
+        self.debug('Trying to remove %s' % client_name)
+        self.debug(self._joined_order)
+        try:
+            self._joined_order.remove(client_name)
+        except ValueError, err:
+            self.debug(err)
+            self.warning('Client %s was not in joined list' % client_name)
+        
         

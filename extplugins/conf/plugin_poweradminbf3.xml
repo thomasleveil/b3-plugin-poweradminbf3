@@ -33,6 +33,7 @@
         <set name="autoscramble">20</set>
 
         <set name="autoassign">20</set>
+        <set name="autobalance">20</set>
     </settings>
 
     <settings name="messages">
@@ -55,6 +56,9 @@
         <!-- no_autoassign_level : Players this level and above will not be auto assigned-->
         <set name="no_autoassign_level">20</set>
         <set name="autoassign">On</set>
+        <set name="autobalance">Off</set>
+        <set name="autobalance_timer">120</set>
+        <set name="team_swap_threshold">3</set>
 	</settings>
 
     <settings name="scrambler">
