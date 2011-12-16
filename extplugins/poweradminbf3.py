@@ -34,10 +34,12 @@
 # 0.8.2 - fix issue #17 with !loadconfig
 # 0.9   - add command !listconfig, !loadconfig can understand mis-spelt names and suggest config names
 # 0.10  - ported xlr8or's configmanager plugin for cod series. Automagically loads server config files based on maps/gamemodes
+# 0.11  - fix issue with configmanager examples' filenames
+# 0.12  - add command !unlockmode
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.11'
+__version__ = '0.12'
 __author__  = 'Courgette'
 
 import random
@@ -194,7 +196,6 @@ class Poweradminbf3Plugin(Plugin):
         
 
 
-
     def onEvent(self, event):
         """\
         Handle intercepted events
@@ -253,7 +254,6 @@ class Poweradminbf3Plugin(Plugin):
             if not self._one_round_over:
                 self._one_round_over = True
                 self.debug('One round finished, Autoassign and Autobalance now active')
-
 
 ################################################################################################################
 #
@@ -571,6 +571,28 @@ class Poweradminbf3Plugin(Plugin):
             else:
                 client.message("invalid data. Expecting one of [off, round, map]")
 
+
+    def cmd_unlockmode(self, data, client, cmd=None):
+        """\
+        <all|common|stats|none> set the weapons unlocks mode
+        """
+        expected_values = ('all', 'common', 'stats', 'none')
+        if not data or data.lower() not in expected_values:
+            if data.lower() not in expected_values and data != '':
+                client.message("unexpected value '%s'. Available modes : %s" % (data, ', '.join(expected_values)))
+            try:
+                current_mode = self.console.getCvar('unlockMode').getString()
+                self.console.game['unlockMode'] = current_mode
+            except Exception:
+                current_mode = 'unknown'
+            cmd.sayLoudOrPM(client=client, message="Current unlock mode is [%s]" % current_mode)
+        else:
+            wanted_mode = data.lower()
+            self.console.setCvar('unlockMode', wanted_mode)
+            self.console.game['unlockMode'] = wanted_mode
+            cmd.sayLoudOrPM(client=client, message="Unlock mode set to %s" % wanted_mode)
+
+
     def cmd_autoassign(self, data, client, cmd=None):
         """\
         <off|on> manage the auto assign
@@ -846,8 +868,8 @@ class Poweradminbf3Plugin(Plugin):
         Loads a preset config file to send to the server
         """
         self.info('Loading %s' % file_path)
-        lines = []
 
+        lines = []
         with file(file_path, 'r') as f:
             lines = f.readlines()
         #self.verbose(repr(lines))
