@@ -38,7 +38,23 @@ Commands
 Other features
 --------------
 
-- can automatically load server config scripts at each map change based on current gamemode and/or map
+ ## CONFIG MANAGER ##
+    Configmanager can automatically load server config scripts at each map change based on current 
+    gamemode and/or map. It will first look if a b3_<gametype>_<mapname>.cfg exists 
+    (example: b3_teamdeathmatch0_mp001.cfg) and execute it. If it doesn't exist, it checks for 
+    b3_<gametype>.cfg (example: b3_rushlarge0.cfg). 
+
+    If none of them exist, it will look for b3_main.cfg. This file makes it possible to reset certain 
+    vars, so always create a b3_main.cfg if you want to enable and use this feature.
+
+    ** Example Scenario **
+    You are running a server with mixed gametypes of Conquest and Rush and you want to play Rush maps
+    without vehicles. What you need to do is to create a file called "b3_rushlarge0.cfg" inside your
+    configmanager folder with required settings. "vars.vehicleSpawnAllowed false" in this case. Also
+    make sure you add "vars.vehicleSpawnAllowed True" in your b3_main.cfg so that when a conquest map
+    comes in rotation vehicles are enabled again.
+
+    Please take note that config manager plugin supports only instantaneous server vars.
 
 
 Support
