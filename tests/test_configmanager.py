@@ -28,24 +28,25 @@ p = Poweradminbf3Plugin(fakeConsole, conf)
 p.onLoadConfig()
 p.onStartup()
 
-# reduce the delay before configmanager loads the config files
-p._configmanager_delay = .01
+def my_getNextMap():
+    return nextmap
+
+def my_getHardName(mapname):
+    return "MP_007"
+
+fakeConsole.getNextMap = my_getNextMap
+fakeConsole.getHardName = my_getHardName
+
 
 assert p._configmanager is True
 
-print "------------------------ should load b3_main.cfg "
-fakeConsole.game.mapName = 'MP_001'
-fakeConsole.game.gameType = 'SillyGameType'
-fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, None))
+print "------------------------ should load b3_main.cfg"
+nextmap = "Caspian Border (Squad Deathmatch)"
+fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_END, None))
 
-time.sleep(1)
-print "------------------------ should load b3_conquestsmall0.cfg"
-fakeConsole.game.mapName = 'MP_001'
-fakeConsole.game.gameType = 'ConquestSmall0'
-fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, None))
+# create a file "b3_teamdeathmatch0.cfg" in config folder to test below
+#time.sleep(1)
 
-time.sleep(1)
-print "------------------------ should load b3_conquestsmall0_mp_012"
-fakeConsole.game.mapName = 'MP_012'
-fakeConsole.game.gameType = 'ConquestSmall0'
-fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_START, None))
+#print "------------------------ should load b3_teamdeathmatch0.cfg"
+#nextmap = "Caspian Border (Team Deathmatch)"
+#fakeConsole.queueEvent(b3.events.Event(b3.events.EVT_GAME_ROUND_END, None))
