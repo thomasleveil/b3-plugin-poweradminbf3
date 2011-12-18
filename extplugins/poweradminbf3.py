@@ -1054,18 +1054,18 @@ class Poweradminbf3Plugin(Plugin):
             return
             
         self._run_autobalancer = True
-        self._sendMessage(None, 'Auto balancing teams in 20 seconds')
+        self.console.say('Auto balancing teams in 20 seconds')
         i = 0
         while i < 10:
             time.sleep(1)
             i += 1
             
-        self._sendMessage(None, 'Auto balancing teams in 10 seconds')
+        self.console.say('Auto balancing teams in 10 seconds')
         i = 0
         while i < 10:
             time.sleep(1)
             i += 1
-        self._sendMessage(None, 'Auto balancing teams')
+        self.console.say('Auto balancing teams')
         
         clients = self.console.clients.getList()
         if len(clients)<=3:
@@ -1102,7 +1102,7 @@ class Poweradminbf3Plugin(Plugin):
                 del self._joined_order.remove[ind]
                 
         if players > 0:
-            self._sendMessage(None, 'Not enough players to move')
+            self.console.say('Not enough players to move')
         self._run_autobalancer = False
         if self._autobalance:
             (min, sec) = self.autobalance_time()
