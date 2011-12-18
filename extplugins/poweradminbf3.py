@@ -36,10 +36,11 @@
 # 0.10  - ported xlr8or's configmanager plugin for cod series. Automagically loads server config files based on maps/gamemodes
 # 0.11  - fix issue with configmanager examples' filenames
 # 0.12  - add command !unlockmode
+# 0.13  - fixes #22 : !swap reports everything went fine even when failing
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.12'
+__version__ = '0.13'
 __author__  = 'Courgette'
 
 import random
@@ -351,17 +352,20 @@ class Poweradminbf3Plugin(Plugin):
         teamA, teamB = sclientA.teamId, sclientB.teamId
         squadA, squadB = sclientA.squad, sclientB.squad
 
-        # move player A to teamB/NO_SQUAD
-        self._movePlayer(sclientA, teamB)
+        try:
+            # move player A to teamB/NO_SQUAD
+            self._movePlayer(sclientA, teamB)
 
-        # move player B to teamA/squadA
-        self._movePlayer(sclientB, teamA, squadA)
+            # move player B to teamA/squadA
+            self._movePlayer(sclientB, teamA, squadA)
 
-        # move player A to teamB/squadB if squadB != 0
-        if squadB:
-            self._movePlayer(sclientA, teamB, squadB)
+            # move player A to teamB/squadB if squadB != 0
+            if squadB:
+                self._movePlayer(sclientA, teamB, squadB)
 
-        cmd.sayLoudOrPM(client, 'swapped player %s with %s' % (sclientA.cid, sclientB.cid))
+            cmd.sayLoudOrPM(client, 'swapped player %s with %s' % (sclientA.cid, sclientB.cid))
+        except CommandFailedError, e:
+            client.message("Error while trying to swap %s with %s. (%s)" % (sclientA.cid, sclientB.cid, e.message[0]))
 
 
     def cmd_punkbuster(self, data, client, cmd=None):
@@ -566,7 +570,7 @@ class Poweradminbf3Plugin(Plugin):
             self.debug('Using default value (random) for scrambling strategy')
 
         try:
-            mode = self.config.get('scrambler', 'mode').tolower()
+            mode = self.config.get('scrambler', 'mode').lower()
             if mode not in ('off', 'round', 'map'):
                 raise ValueError
             if mode == 'off':
@@ -659,11 +663,8 @@ class Poweradminbf3Plugin(Plugin):
                     self._adminPlugin.registerCommand(self, cmd, level, func, alias)
 
     def _movePlayer(self, client, teamId, squadId=0):
-        try:
-            client.setvar(self, 'movedByBot', True)
-            self.console.write(('admin.movePlayer', client.cid, teamId, squadId, 'true'))
-        except CommandFailedError, err:
-            self.warning('Error, server replied %s' % err)
+        self.console.write(('admin.movePlayer', client.cid, teamId, squadId, 'true'))
+        client.setvar(self, 'movedByBot', True)
 
     def _get_server_config_directory(self, dir_name=''):
         """returns an existing absolute directory path supposed to contain some game server config files.
