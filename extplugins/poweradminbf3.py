@@ -53,7 +53,6 @@ from ConfigParser import NoOptionError
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock, PlayerInfoBlock
 import b3.cron
-from b3.parsers.bf3 import GAME_MODES_NAMES
 
 
 class Scrambler:
@@ -247,9 +246,6 @@ class Poweradminbf3Plugin(Plugin):
                 self.autoassign(event.client)
 
         elif event.type == b3.events.EVT_GAME_ROUND_END:
-            if self._configmanager:
-                self.config_manager_construct_file_names()
-                self.config_manager_check_config()
             self._scramblingdone = False
             self._run_autobalancer = False
             if self._cronTab_autobalance:
@@ -981,52 +977,29 @@ class Poweradminbf3Plugin(Plugin):
 
     def config_manager_construct_file_names(self):
         """
-        Construct file names based on next level name and next game mode for configmanager feature
+        Construct file names based on level name and game mode for configmanager feature
         """
-        #check if we have more rounds to play
-        _rounds_left = self._get_rounds_left()
-        if _rounds_left > 0:
-            self.debug('%s more round(s) to go' % _rounds_left)
-            #get current map and gametype
-            c = self.console.game
+        c = self.console.game
 
-            self._next_typeandmap = 'b3_%s_%s' % (c.gameType.lower(), c.mapName.lower())
-            self.debug('Type and Map Config: %s' %(self._next_typeandmap))
+        self._typeandmap = 'b3_%s_%s' % (c.gameType.lower(), c.mapName.lower())
+        self.debug('Type and Map Config: %s' %(self._typeandmap))
 
-            self._next_gametype = 'b3_%s' % (c.gameType.lower())
-            self.debug('Gametype Config: %s' %(self._next_gametype))
-        else:
-            #get next map and gametype
-            next_map_gametype = self.console.getNextMap()
-            p = next_map_gametype.split('(')
-            next_mapName = p[0].strip()
-            next_mapName = self.console.getHardName(next_mapName)
-
-            game_modes_names_inverse = dict((GAME_MODES_NAMES[k], k) for k in GAME_MODES_NAMES)
-            next_gameType = p[1][:-1].strip()
-            next_gameType = game_modes_names_inverse[next_gameType]
-
-            self._next_typeandmap = 'b3_%s_%s' % (next_gameType.lower(), next_mapName.lower())
-            self.debug('Type and Map Config for Next Map: %s' %(self._next_typeandmap))
-
-            self._next_gametype = 'b3_%s' % (next_gameType.lower())
-            self.debug('Gametype Config for Next Map: %s' %(self._next_gametype))
-
-
+        self._gametype = 'b3_%s' % (c.gameType.lower())
+        self.debug('Gametype Config: %s' %(self._gametype))
 
     def config_manager_check_config(self):
         """
         Check and run the configs
         """
-        if os.path.isfile(self._configManager_configPath + os.path.sep + self._next_typeandmap + '.cfg'): # b3_<gametype>_<mapname>.cfg
-            _fName = self._configManager_configPath + os.path.sep + self._next_typeandmap + '.cfg'
-            self.debug('Executing %s.cfg' %(self._next_typeandmap))
-            self._load_server_config_from_file(client=None, config_name=self._next_typeandmap, file_path=_fName, threaded=True)
+        if os.path.isfile(self._configManager_configPath + os.path.sep + self._typeandmap + '.cfg'): # b3_<gametype>_<mapname>.cfg
+            _fName = self._configManager_configPath + os.path.sep + self._typeandmap + '.cfg'
+            self.debug('Executing %s.cfg' %(self._typeandmap))
+            self._load_server_config_from_file(client=None, config_name=self._typeandmap, file_path=_fName, threaded=True)
 
-        elif os.path.isfile(self._configManager_configPath + os.path.sep + self._next_gametype + '.cfg'): # b3_<gametype>.cfg
-            _fName = self._configManager_configPath + os.path.sep + self._next_gametype + '.cfg'
-            self.debug('Executing %s.cfg' %(self._next_gametype))
-            self._load_server_config_from_file(client=None, config_name=self._next_gametype, file_path=_fName, threaded=True)
+        elif os.path.isfile(self._configManager_configPath + os.path.sep + self._gametype + '.cfg'): # b3_<gametype>.cfg
+            _fName = self._configManager_configPath + os.path.sep + self._gametype + '.cfg'
+            self.debug('Executing %s.cfg' %(self._gametype))
+            self._load_server_config_from_file(client=None, config_name=self._gametype, file_path=_fName, threaded=True)
 
         elif os.path.isfile(self._configManager_configPath + os.path.sep + 'b3_main.cfg'): # b3_main.cfg
             _fName = self._configManager_configPath + os.path.sep + 'b3_main.cfg'
@@ -1044,17 +1017,7 @@ class Poweradminbf3Plugin(Plugin):
             client.message(msg)
         else:
             self.debug(msg)
-
-    def _get_rounds_left(self):
-        """
-        check and return rounds left
-        """
-        rounds = self.console.write(('mapList.getRounds',))
-        current_round = int(rounds[0]) + 1
-        total_rounds = int(rounds[1])
-        rounds_left = total_rounds - current_round
-        return rounds_left
-
+            
     def autoassign(self, client):
         """
         Auto Assign team on joining or changing teams to keep teams balanced
@@ -1069,11 +1032,11 @@ class Poweradminbf3Plugin(Plugin):
         self.debug('Team1 = %s' % team1)
         self.debug('Team2 = %s' % team2)
         self.debug('New Client team is %s' % client.teamId)
-        if team1 - team2 >= (self._team_swap_threshold - 1) and client.teamId == 1:
+        if team1 - team2 >= (self._team_swap_threshold) and client.teamId == 1:
             self.debug('Move player to team 2')
             self._movePlayer(client, 2)
             
-        elif team2 - team1 >= (self._team_swap_threshold -1) and client.teamId == 2:
+        elif team2 - team1 >= (self._team_swap_threshold) and client.teamId == 2:
             self.debug('Move player to team 1')
             self._movePlayer(client, 1)
         else:
@@ -1121,9 +1084,6 @@ class Poweradminbf3Plugin(Plugin):
             self.auto_move_players( 2, players_to_move)
 
     def automove_players(self, team, players):
-        """
-        Find and move clients for the Autobalance
-        """
         if team == 1:
             newteam = 2
         else:
@@ -1150,9 +1110,6 @@ class Poweradminbf3Plugin(Plugin):
             self.console.cron + self._cronTab_autobalance
             
     def autobalance_time(self):
-        """
-        get the values for the Autobalance timer
-        """
         sec = self._autobalance_timer
         min = int(time.strftime('%M'))
         sec = sec + int(time.strftime('%S'))
