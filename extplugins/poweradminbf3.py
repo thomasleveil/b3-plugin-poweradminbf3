@@ -39,7 +39,7 @@
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.12'
+__version__ = '0.12.1'
 __author__  = 'Courgette'
 
 import random
@@ -1083,7 +1083,7 @@ class Poweradminbf3Plugin(Plugin):
             players_to_move = team2more//2
             self.auto_move_players( 2, players_to_move)
 
-    def automove_players(self, team, players):
+    def auto_move_players(self, team, players):
         if team == 1:
             newteam = 2
         else:
