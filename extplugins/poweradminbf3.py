@@ -759,7 +759,7 @@ class Poweradminbf3Plugin(Plugin):
             except CommandFailedError, err:
                 self._sendMessage(client, ("Error writing map rotation list to disk. %s" % err.message))
 
-        self._sendMessage(client, ("New config \"%s\" loaded" % config_name))
+        self._sendMessage(client, ("config \"%s\" loaded" % config_name))
 
     def _list_available_server_config_files(self):
         self.info("looking for config files in directory : %s" % self._configPath)
