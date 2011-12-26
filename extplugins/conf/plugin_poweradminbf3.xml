@@ -32,6 +32,8 @@
         <set name="scramble">20</set>
         <set name="scramblemode">20</set>
         <set name="autoscramble">20</set>
+
+        <set name="vehicles">20</set>
     </settings>
 
     <settings name="messages">

@@ -37,10 +37,11 @@
 # 0.11  - fix issue with configmanager examples' filenames
 # 0.12  - add command !unlockmode
 # 0.13  - fixes #22 : !swap reports everything went fine even when failing
+# 0.14  - add command !vehicles
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.13'
+__version__ = '0.14'
 __author__  = 'Courgette'
 
 import random
@@ -552,6 +553,35 @@ class Poweradminbf3Plugin(Plugin):
             self.console.game['unlockMode'] = wanted_mode
             cmd.sayLoudOrPM(client=client, message="Unlock mode set to %s" % wanted_mode)
 
+
+    def cmd_vehicles(self, data, client=None, cmd=None):
+        """\
+        <on|off> - Toggle vehicles on or off
+        """
+        expected_values = ('on', 'off')
+        if not data or data.lower() not in expected_values:
+            if data.lower() not in expected_values and data != '':
+                client.message("unexpected value '%s'. Available modes : %s" % (data, ', '.join(expected_values)))
+            try:
+                current_mode = self.console.getCvar('vehicleSpawnAllowed').getString()
+                self.console.game['vehicleSpawnAllowed'] = current_mode
+                if current_mode == 'true':
+                    current_mode = 'ON'
+                elif current_mode == 'false':
+                    current_mode = 'OFF'
+            except Exception, err:
+                self.error(err)
+                current_mode = 'unknown'
+            cmd.sayLoudOrPM(client=client, message="Vehicle spawn is [%s]" % current_mode)
+        else:
+            new_value = 'true' if data.lower() == 'on' else 'false'
+            try:
+                self.console.setCvar('vehicleSpawnAllowed', new_value)
+            except CommandFailedError, err:
+                client.message("could not change vehicle spawn mode : %s" % err.message)
+            else:
+                self.console.game['vehicleSpawnAllowed'] = new_value
+                cmd.sayLoudOrPM(client=client, message="vehicle spawn is now [%s]" % data.upper())
 
 ################################################################################################################
 #
