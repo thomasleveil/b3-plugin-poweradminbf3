@@ -33,6 +33,7 @@ Commands
 !scramblemode <random/score> - set the scrambling strategy
 !autoscramble <off/round/map> - set the auto-scrambling mode
 !unlockmode <all|common|stats|none> - set the weapons unlocks
+!vehicles <on|off> - (en|dis)able vehicles spawn
 
 
 Other features
