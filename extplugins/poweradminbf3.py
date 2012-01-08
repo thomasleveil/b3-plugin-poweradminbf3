@@ -41,7 +41,7 @@
 import re
 from b3.functions import soundex, levenshteinDistance
 
-__version__ = '0.14.1'
+__version__ = '0.14.2'
 __author__  = 'Courgette'
 
 import random
@@ -148,6 +148,7 @@ class Poweradminbf3Plugin(Plugin):
         self._run_autobalancer = False
         self._one_round_over = False
         self._autobalance_timer = 60
+        self._autobalance_message_interval = 10
         self._cronTab_autobalance = None
         self._scramblingdone = False
         self._scrambling_planned = False
@@ -831,7 +832,11 @@ class Poweradminbf3Plugin(Plugin):
             self.error(err)
         if self._autobalance_timer < 30:
             self._autobalance_timer = 30
-        self.info('autobalance timer is %s seconds' % self._autobalance_timer)
+        self.info('Autobalance timer is %s seconds' % self._autobalance_timer)
+        self._autobalance_message_interval = self._autobalance_timer // 6
+        if self._autobalance_message_interval > 10:
+            self._autobalance_message_interval = 10
+        self.info('Autobalance message interval is %s seconds' % self._autobalance_message_interval)
         
         try:
             self._team_swap_threshold = self.config.getint('preferences', 'team_swap_threshold')
@@ -1128,18 +1133,19 @@ class Poweradminbf3Plugin(Plugin):
             return
             
         self._run_autobalancer = True
-        self.console.say('Auto balancing teams in 20 seconds')
+        self.console.say('Auto balancing teams in %s seconds' % (self._autobalance_message_interval*2))
         i = 0
-        while i < 10:
+        while i < self._autobalance_message_interval:
             time.sleep(1)
             i += 1
             
-        self.console.say('Auto balancing teams in 10 seconds')
+        self.console.say('Auto balancing teams in %s seconds' % self._autobalance_message_interval)
         i = 0
-        while i < 10:
+        while i < self._autobalance_message_interval:
             time.sleep(1)
             i += 1
         self.console.say('Auto balancing teams')
+        self.debug('Auto balancing teams')
         
         clients = self.console.clients.getList()
         if len(clients)<=3:
@@ -1147,6 +1153,7 @@ class Poweradminbf3Plugin(Plugin):
         team1, team2 = self.count_teams(clients)
         team1more = team1 - team2
         team2more = team2 - team1
+        self.debug('Team1 %s vs Team2 %s' % (team1, team2)) 
         if team1more < self._team_swap_threshold and team2more < self._team_swap_threshold:
             return
         if team1more > 0:
@@ -1164,6 +1171,7 @@ class Poweradminbf3Plugin(Plugin):
             newteam = 1
             
         ind = len(self._joined_order)
+        self.debug('Moving %s players from Team %s to %s' % (players, team, newteam))
         while ind > 0 and players > 0:
             ind -= 1
             cl = self._adminPlugin.findClientPrompt(self._joined_order[ind])
@@ -1171,6 +1179,8 @@ class Poweradminbf3Plugin(Plugin):
                 if cl.teamId == team and cl.maxLevel <= self._no_autoassign_level:
                     if self._run_autobalancer:
                         self._movePlayer(cl, newteam)
+                        self.console.say('Moving %s to team %s' % (cl.name, newteam))
+                        self.debug('Moving %s to team %s' % (cl.name, newteam))
                         players -= 1
             else:
                 del self._joined_order.remove[ind]
