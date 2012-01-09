@@ -34,6 +34,8 @@ Commands
 !autoscramble <off/round/map> - set the auto-scrambling mode
 !unlockmode <all|common|stats|none> - set the weapons unlocks
 !vehicles <on|off> - (en|dis)able vehicles spawn
+!autobalance <off|on> - (de)activate the autobalancer
+!autoassign <off|on> - (de)activate the autoassigner which puts connecting player into the right team
 
 
 Other features

@@ -33,6 +33,9 @@
         <set name="scramblemode">20</set>
         <set name="autoscramble">20</set>
 
+        <set name="autoassign">20</set>
+        <set name="autobalance">20</set>
+
         <set name="vehicles">20</set>
     </settings>
 
@@ -53,6 +56,12 @@
             This applies to commands !swap and !changeteam
          -->
         <set name="no_level_check_level">60</set>
+        <!-- no_autoassign_level : Players this level and above will not be auto assigned-->
+        <set name="no_autoassign_level">20</set>
+        <set name="autoassign">On</set>
+        <set name="autobalance">On</set>
+        <set name="autobalance_timer">120</set>
+        <set name="team_swap_threshold">3</set>
 	</settings>
 
     <settings name="scrambler">

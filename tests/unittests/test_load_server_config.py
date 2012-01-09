@@ -115,7 +115,7 @@ class Test_load_server_config(unittest.TestCase):
         self.assertTrue(self.console.write.called)
         self.console.write.assert_called_with(('vars.theCvar', 'theValue'))
         self.assertEqual(1, client.message.call_count)
-        client.message.assert_was_called_with('New config "theConfName" loaded')
+        client.message.assert_was_called_with('config "theConfName" loaded')
 
     def test_write_cvars_with_error(self):
         self.console.write.side_effect = CommandFailedError('theError')
