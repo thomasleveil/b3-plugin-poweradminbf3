@@ -650,15 +650,15 @@ class Poweradminbf3Plugin(Plugin):
         else:
             if data.lower() == 'off':
                 self._autoassign = False
-                client.message('Auto Assign now disabled')
+                client.message('Autoassign now disabled')
                 if self._autobalance:
                     self._autobalance = False
-                    client.message('Auto Balance now disabled')
+                    client.message('Autobalance now disabled')
             elif data.lower() == 'on':
                 self._autoassign = True
-                client.message('Auto assign now enabled')
+                client.message('Autoassign now enabled')
             else:
-                client.message("invalid data. Expecting on or off]")
+                client.message("invalid data. Expecting on or off")
                 
     def cmd_autobalance(self, data, client, cmd=None):
         """\
@@ -673,31 +673,31 @@ class Poweradminbf3Plugin(Plugin):
         else:
             if data.lower() == 'off':
                 self._autobalance = False
-                client.message('Auto balance now disabled')
+                client.message('Autobalance now disabled')
                 if self._cronTab_autobalance:
                     # remove existing crontab
                     self.console.cron - self._cronTab_autobalance
                     
             elif data.lower() == 'on':
                 if self._autobalance:
-                    client.message('Auto balance is already enabled')
+                    client.message('Autobalance is already enabled')
                 else:
                     self._autobalance = True
                     if self._one_round_over:
                         (min, sec) = self.autobalance_time()
                         self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
                         self.console.cron + self._cronTab_autobalance
-                        client.message('Auto balance now enabled')
+                        client.message('Autobalance now enabled')
                     else:
-                        client.message('Auto balance eill be enabled on next round start')
+                        client.message('Autobalance will be enabled on next round start')
                     if not self._autoassign:
                         self._autoassign = True
-                        client.message('Auto Assign now enabled')
+                        client.message('Autoassign now enabled')
 
             elif data.lower() == 'now':
                 self.run_autobalance()
             else:
-                client.message("invalid data. Expecting on, off or now]")
+                client.message("invalid data. Expecting on, off or now")
                 
                 
 
