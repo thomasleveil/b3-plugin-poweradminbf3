@@ -277,6 +277,21 @@ class Poweradminbf3Plugin(Plugin):
             client.message('Error: %s' % err.message)
 
 
+    def cmd_endround(self, data, client, cmd=None):
+        """\
+        End current round
+        """
+        if not data:
+            client.message('missing TeamID')
+            ## @todo Get/Set winning Team by current Ticketcount if no TeamID passed
+        else:
+            self.console.say('End current round')
+            time.sleep(1)
+            try:
+                self.console.write(('mapList.endRound', winner_teamID))
+            except:
+                client.message('Error: %s' % err.message)
+
     def cmd_roundrestart(self, data, client, cmd=None):
         """\
         Restart current round
