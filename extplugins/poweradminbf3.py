@@ -39,9 +39,10 @@
 # 0.13  - fixes #22 : !swap reports everything went fine even when failing
 # 0.14  - add command !vehicles
 # 0.15  - add team balancing (82ndab-Bravo17)
+# 0.16  - add command !endround (ozon)
 
-__version__ = '0.15'
-__author__  = 'Courgette, 82ndab-Bravo17'
+__version__ = '0.16'
+__author__  = 'Courgette, 82ndab-Bravo17, ozon'
 
 import re
 from b3.functions import soundex, levenshteinDistance
@@ -279,7 +280,7 @@ class Poweradminbf3Plugin(Plugin):
 
     def cmd_endround(self, data, client, cmd=None):
         """\
-        End current round
+        <team id> - End current round. team id is the winning team
         """
         if not data:
             client.message('missing TeamID')
