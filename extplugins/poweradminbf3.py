@@ -40,8 +40,9 @@
 # 0.14  - add command !vehicles
 # 0.15  - add team balancing (82ndab-Bravo17)
 # 0.16  - add command !endround (ozon)
+# 0.16.1  - fix command !endround
 
-__version__ = '0.16'
+__version__ = '0.16.1'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon'
 
 import re
@@ -286,12 +287,13 @@ class Poweradminbf3Plugin(Plugin):
             client.message('missing TeamID')
             ## @todo Get/Set winning Team by current Ticketcount if no TeamID passed
         else:
+            args = cmd.parseData(data)
             self.console.say('End current round')
             time.sleep(1)
             try:
-                self.console.write(('mapList.endRound', winner_teamID))
-            except:
-                client.message('Error: %s' % err.message)
+                self.console.write(('mapList.endRound', args[0]))
+            except CommandFailedError, err:
+                client.message('Error: %s' % err.message[0])
 
     def cmd_roundrestart(self, data, client, cmd=None):
         """\
