@@ -2,7 +2,7 @@
 #
 # PowerAdmin BF3 Plugin for BigBrotherBot(B3) (www.bigbrotherbot.net)
 # Copyright (C) 2011 Thomas LÉVEIL (courgette@bigbrotherbot.net)
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -12,7 +12,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -41,8 +41,9 @@
 # 0.15  - add team balancing (82ndab-Bravo17)
 # 0.16  - add command !endround (ozon)
 # 0.16.1  - fix command !endround
+# 0.16.2 - fix !changeteam for SquadDeathMatch0
 
-__version__ = '0.16.1'
+__version__ = '0.16.2'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon'
 
 import re
@@ -180,7 +181,7 @@ class Poweradminbf3Plugin(Plugin):
         self._load_scrambler()
         self._load_configmanager_config_path()
         self._load_configmanager()
-        
+
     def startup(self):
         """\
         Initialize plugin settings
@@ -200,7 +201,7 @@ class Poweradminbf3Plugin(Plugin):
         self.registerEvent(b3.events.EVT_CLIENT_AUTH)
         self.registerEvent(b3.events.EVT_CLIENT_DISCONNECT)
         self.registerEvent(b3.events.EVT_CLIENT_TEAM_CHANGE)
-        
+
 
 
     def onEvent(self, event):
@@ -253,10 +254,10 @@ class Poweradminbf3Plugin(Plugin):
             if self._one_round_over and self._autoassign and self._scramblingdone:
                 self.autoassign(event.client)
             self.client_connect(event.client)
-            
+
         elif event.type == b3.events.EVT_CLIENT_DISCONNECT:
             self.client_disconnect(event.client, event.data)
-                
+
         elif event.type == b3.events.EVT_CLIENT_TEAM_CHANGE:
             if self._one_round_over and self._autoassign and self._scramblingdone:
                 self.autoassign(event.client)
@@ -340,27 +341,32 @@ class Poweradminbf3Plugin(Plugin):
         """\
         <name> - change a player to the other team
         """
-        name, reason = self._adminPlugin.parseUserCmd(data)
-        if not name:
+        if not data:
             client.message('Invalid data, try !help changeteam')
         else:
-            sclient = self._adminPlugin.findClientPrompt(name, client)
-            if not sclient:
-                # a player matching the name was not found, a list of closest matches will be displayed
-                # we can exit here and the user will retry with a more specific player
-                return
-            elif sclient.maxLevel > client.maxLevel and self.no_level_check_level > client.maxLevel:
-                if sclient.maxGroup:
-                    client.message(self.getMessage('operation_denied_level', {'name': sclient.name, 'group': sclient.maxGroup.name}))
-                else:
-                    client.message(self.getMessage('operation_denied'))
+            name, reason = self._adminPlugin.parseUserCmd(data)
+            if not name:
+                client.message('Invalid data, try !help changeteam')
             else:
-                newteam = '2' if sclient.teamId == 1 else '1'
-                try:
-                    self.console.write(('admin.movePlayer', sclient.cid, newteam, 0, 'true'))
-                    cmd.sayLoudOrPM(client, '%s forced from team %s to team %s' % (sclient.cid, sclient.teamId, newteam))
-                except CommandFailedError, err:
-                    client.message('Error, server replied %s' % err)
+                sclient = self._adminPlugin.findClientPrompt(name, client)
+                if not sclient:
+                    # a player matching the name was not found, a list of closest matches will be displayed
+                    # we can exit here and the user will retry with a more specific player
+                    return
+                elif sclient.maxLevel > client.maxLevel and self.no_level_check_level > client.maxLevel:
+                    if sclient.maxGroup:
+                        client.message(self.getMessage('operation_denied_level', {'name': sclient.name, 'group': sclient.maxGroup.name}))
+                    else:
+                        client.message(self.getMessage('operation_denied'))
+                else:
+                    original_team = sclient.teamId
+                    num_teams = 2 if self.console.game.gameType != 'SquadDeathMatch0' else 4
+                    newteam = (sclient.teamId % num_teams) + 1
+                    try:
+                        self.console.write(('admin.movePlayer', sclient.cid, newteam, 0, 'true'))
+                        cmd.sayLoudOrPM(client, '%s forced from team %s to team %s' % (sclient.cid, original_team, newteam))
+                    except CommandFailedError, err:
+                        client.message('Error, server replied %s' % err)
 
 
     def cmd_swap(self, data, client, cmd=None):
@@ -677,7 +683,7 @@ class Poweradminbf3Plugin(Plugin):
                 client.message('Autoassign now enabled')
             else:
                 client.message("invalid data. Expecting on or off")
-                
+
     def cmd_autobalance(self, data, client, cmd=None):
         """\
         <off|on> manage the auto balance
@@ -695,7 +701,7 @@ class Poweradminbf3Plugin(Plugin):
                 if self._cronTab_autobalance:
                     # remove existing crontab
                     self.console.cron - self._cronTab_autobalance
-                    
+
             elif data.lower() == 'on':
                 if self._autobalance:
                     client.message('Autobalance is already enabled')
@@ -716,8 +722,8 @@ class Poweradminbf3Plugin(Plugin):
                 self.run_autobalance()
             else:
                 client.message("invalid data. Expecting on, off or now")
-                
-                
+
+
 
 ################################################################################################################
 #
@@ -811,7 +817,7 @@ class Poweradminbf3Plugin(Plugin):
         except Exception, err:
             self.error(err)
         self.info('no_autoassign_level is %s' % self._no_autoassign_level)
-        
+
         try:
             self._autoassign = self.config.getboolean('preferences', 'autoassign')
         except NoOptionError:
@@ -822,7 +828,7 @@ class Poweradminbf3Plugin(Plugin):
         except Exception, err:
             self.error(err)
         self.info('autoassign is %s' % self._autoassign)
-        
+
         try:
             self._autobalance = self.config.getboolean('preferences', 'autobalance')
         except NoOptionError:
@@ -834,12 +840,12 @@ class Poweradminbf3Plugin(Plugin):
             self.error(err)
         self.info('autobalance is %s' % self._autobalance)
 
-        
+
         if self._autobalance:
             if not self._autoassign:
                 self._autoassign = True
                 self.info('Autobalance is ON, so turning Autoassign ON also')
-        
+
         try:
             self._autobalance_timer = self.config.getint('preferences', 'autobalance_timer')
         except NoOptionError:
@@ -856,7 +862,7 @@ class Poweradminbf3Plugin(Plugin):
         if self._autobalance_message_interval > 10:
             self._autobalance_message_interval = 10
         self.info('Autobalance message interval is %s seconds' % self._autobalance_message_interval)
-        
+
         try:
             self._team_swap_threshold = self.config.getint('preferences', 'team_swap_threshold')
         except NoOptionError:
@@ -869,7 +875,7 @@ class Poweradminbf3Plugin(Plugin):
         if self._team_swap_threshold < 2:
             self._team_swap_threshold = 2
         self.info('team swap threshold is %s' % self._team_swap_threshold)
-        
+
     def _load_configmanager(self):
         try:
             self._configmanager = self.config.getboolean('configmanager', 'status')
@@ -1112,7 +1118,7 @@ class Poweradminbf3Plugin(Plugin):
         rounds_left = total_rounds - current_round
         return rounds_left
 
-            
+
     def autoassign(self, client):
         """
         Auto Assign team on joining or changing teams to keep teams balanced
@@ -1130,13 +1136,13 @@ class Poweradminbf3Plugin(Plugin):
         if team1 - team2 >= (self._team_swap_threshold) and client.teamId == 1:
             self.debug('Move player to team 2')
             self._movePlayer(client, 2)
-            
+
         elif team2 - team1 >= (self._team_swap_threshold) and client.teamId == 2:
             self.debug('Move player to team 1')
             self._movePlayer(client, 1)
         else:
             self.debug('Noone needs moving')
-            
+
     def run_autobalance(self):
         """
         Perform Auto balance to keep teams balanced
@@ -1147,14 +1153,14 @@ class Poweradminbf3Plugin(Plugin):
         team1, team2 = self.count_teams(clients)
         if team1 == team2:
             return
-            
+
         self._run_autobalancer = True
         self.console.say('Auto balancing teams in %s seconds' % (self._autobalance_message_interval*2))
         i = 0
         while i < self._autobalance_message_interval:
             time.sleep(1)
             i += 1
-            
+
         self.console.say('Auto balancing teams in %s seconds' % self._autobalance_message_interval)
         i = 0
         while i < self._autobalance_message_interval:
@@ -1162,20 +1168,20 @@ class Poweradminbf3Plugin(Plugin):
             i += 1
         self.console.say('Auto balancing teams')
         self.debug('Auto balancing teams')
-        
+
         clients = self.console.clients.getList()
         if len(clients)<=3:
             return
         team1, team2 = self.count_teams(clients)
         team1more = team1 - team2
         team2more = team2 - team1
-        self.debug('Team1 %s vs Team2 %s' % (team1, team2)) 
+        self.debug('Team1 %s vs Team2 %s' % (team1, team2))
         if team1more < self._team_swap_threshold and team2more < self._team_swap_threshold:
             return
         if team1more > 0:
             players_to_move = team1more//2
             self.auto_move_players( 1, players_to_move)
-        
+
         else:
             players_to_move = team2more//2
             self.auto_move_players( 2, players_to_move)
@@ -1185,7 +1191,7 @@ class Poweradminbf3Plugin(Plugin):
             newteam = 2
         else:
             newteam = 1
-            
+
         ind = len(self._joined_order)
         self.debug('Moving %s players from Team %s to %s' % (players, team, newteam))
         while ind > 0 and players > 0:
@@ -1200,7 +1206,7 @@ class Poweradminbf3Plugin(Plugin):
                         players -= 1
             else:
                 del self._joined_order.remove[ind]
-                
+
         if players > 0:
             self.console.say('Not enough players to move')
         self._run_autobalancer = False
@@ -1208,20 +1214,20 @@ class Poweradminbf3Plugin(Plugin):
             (min, sec) = self.autobalance_time()
             self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
             self.console.cron + self._cronTab_autobalance
-            
+
     def autobalance_time(self):
         sec = self._autobalance_timer
         min = int(time.strftime('%M'))
-        sec = sec + int(time.strftime('%S'))
+        sec += int(time.strftime('%S'))
         while sec > 59:
             min += 1
             sec -= 60
-            
+
         if min > 59:
             min -= 60
-            
-        return (min, sec)
-        
+
+        return min, sec
+
     def count_teams(self, clients):
         """
         Return the number of players in each team
@@ -1230,17 +1236,17 @@ class Poweradminbf3Plugin(Plugin):
         team2 = 0
         for cl in clients:
             if cl.teamId == 1:
-                team1 = team1 + 1
+                team1 += 1
             if cl.teamId == 2:
-                team2 = team2 + 1
-        return (team1, team2)
+                team2 += 1
+        return team1, team2
 
     def client_connect(self, client):
         """
         Add client to joined order list
         """
         self._joined_order.append(client.name)
-        
+
     def client_disconnect(self, client, client_name):
         """
         Remove client from joined order list
@@ -1252,5 +1258,5 @@ class Poweradminbf3Plugin(Plugin):
         except ValueError, err:
             self.debug(err)
             self.warning('Client %s was not in joined list' % client_name)
-        
-        
+
+

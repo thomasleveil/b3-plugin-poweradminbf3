@@ -1,19 +1,17 @@
 # -*- encoding: utf-8 -*-
 import os
 from mock import Mock, patch # http://www.voidspace.org.uk/python/mock/
-from tests import prepare_fakeparser_for_tests
-prepare_fakeparser_for_tests()
 
-from b3.fake import fakeConsole
 from poweradminbf3 import Poweradminbf3Plugin, __file__ as poweradminbf3_file
 from b3.config import XmlConfigParser
 
-import unittest
+from unittests import Bf3TestCase
 
-class Test_server_config_path(unittest.TestCase):
+class Test_server_config_path(Bf3TestCase):
     existing_paths = []
 
     def setUp(self):
+        Bf3TestCase.setUp(self)
         self.conf = XmlConfigParser()
         self.setExistingPaths([])
 
@@ -40,7 +38,7 @@ class Test_server_config_path(unittest.TestCase):
         </configuration>
         """)
         # the plugin config does not exist on the filesystem
-        p = Poweradminbf3Plugin(fakeConsole, self.conf)
+        p = Poweradminbf3Plugin(self.console, self.conf)
         p.onLoadConfig()
         self.assertIsNone(p._configPath)
 
@@ -54,7 +52,7 @@ class Test_server_config_path(unittest.TestCase):
         """)
         # the plugin config does not exist on the filesystem
 
-        p = Poweradminbf3Plugin(fakeConsole, self.conf)
+        p = Poweradminbf3Plugin(self.console, self.conf)
         # make B3 think it has a config file on the filesystem
         p.console.config.fileName = "somewhere/on/the/filesystem/b3conf/b3.xml"
 
@@ -74,7 +72,7 @@ class Test_server_config_path(unittest.TestCase):
         """)
         self.conf.fileName = "somewhere/on/the/filesystem/plugin_poweradminbf3.xml"
 
-        p = Poweradminbf3Plugin(fakeConsole, self.conf)
+        p = Poweradminbf3Plugin(self.console, self.conf)
 
         self.setExistingPaths(["somewhere/on/the/filesystem//serverconfigs"])
         with patch.object(os.path, 'isdir', Mock(side_effect=Test_server_config_path.isdir)):
@@ -93,7 +91,7 @@ class Test_server_config_path(unittest.TestCase):
         </configuration>
         """)
 
-        p = Poweradminbf3Plugin(fakeConsole, self.conf)
+        p = Poweradminbf3Plugin(self.console, self.conf)
         p.onLoadConfig()
         self.assertIsNone(p._configPath)
 
@@ -107,7 +105,7 @@ class Test_server_config_path(unittest.TestCase):
             </settings>
         </configuration>
         """)
-        p = Poweradminbf3Plugin(fakeConsole, self.conf)
+        p = Poweradminbf3Plugin(self.console, self.conf)
 
         self.setExistingPaths(['/somewhere/on/the/filesystem/'])
         with patch.object(os.path, 'isdir', Mock(side_effect=Test_server_config_path.isdir)):
@@ -125,7 +123,7 @@ class Test_server_config_path(unittest.TestCase):
             </settings>
         </configuration>
         """)
-        p = Poweradminbf3Plugin(fakeConsole, self.conf)
+        p = Poweradminbf3Plugin(self.console, self.conf)
         # make B3 think it has a config file on the filesystem
         p.console.config.fileName = "somewhere/on/the/filesystem/b3conf/b3.xml"
 
@@ -146,7 +144,7 @@ class Test_server_config_path(unittest.TestCase):
         """)
         self.conf.fileName = "somewhere/on/the/filesystem/plugin_poweradminbf3.xml"
 
-        p = Poweradminbf3Plugin(fakeConsole, self.conf)
+        p = Poweradminbf3Plugin(self.console, self.conf)
 
         self.setExistingPaths(["somewhere/on/the/filesystem/subdirectory"])
         with patch.object(os.path, 'isdir', Mock(side_effect=Test_server_config_path.isdir)):

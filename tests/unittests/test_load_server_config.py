@@ -1,11 +1,13 @@
 # -*- encoding: utf-8 -*-
 import unittest
 from mock import Mock # http://www.voidspace.org.uk/python/mock/mock.html
-from tests import extends_mock
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
 
+
+from unittests import extends_mock
 extends_mock()
+
 
 class Test_load_server_config(unittest.TestCase):
 
