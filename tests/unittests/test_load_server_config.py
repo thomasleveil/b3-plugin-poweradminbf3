@@ -5,7 +5,7 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
 
 
-from unittests import extends_mock
+from tests.unittests import extends_mock
 extends_mock()
 
 
