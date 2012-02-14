@@ -42,8 +42,9 @@
 # 0.16  - add command !endround (ozon)
 # 0.16.1  - fix command !endround
 # 0.16.2 - fix !changeteam for SquadDeathMatch0
+# 0.16.3 - Only start autobalancing when teams are out of balance by team_swap_threshold or more
 
-__version__ = '0.16.2'
+__version__ = '0.16.3'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon'
 
 import re
@@ -686,7 +687,7 @@ class Poweradminbf3Plugin(Plugin):
 
     def cmd_autobalance(self, data, client, cmd=None):
         """\
-        <off|on> manage the auto balance
+        <off|on|now> manage the auto balance
         """
 
         if not data:
@@ -1151,9 +1152,11 @@ class Poweradminbf3Plugin(Plugin):
         if len(clients) < 3:
             return
         team1, team2 = self.count_teams(clients)
-        if team1 == team2:
+        team1more = team1 - team2
+        team2more = team2 - team1
+        self.debug('Team1 %s vs Team2 %s' % (team1, team2)) 
+        if team1more < self._team_swap_threshold and team2more < self._team_swap_threshold:
             return
-
         self._run_autobalancer = True
         self.console.say('Auto balancing teams in %s seconds' % (self._autobalance_message_interval*2))
         i = 0
