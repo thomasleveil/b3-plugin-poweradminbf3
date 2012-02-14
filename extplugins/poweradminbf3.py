@@ -1133,11 +1133,11 @@ class Poweradminbf3Plugin(Plugin):
         self.debug('Team1 = %s' % team1)
         self.debug('Team2 = %s' % team2)
         self.debug('New Client team is %s' % client.teamId)
-        if team1 - team2 >= (self._team_swap_threshold) and client.teamId == 1:
+        if team1 - team2 >= self._team_swap_threshold and client.teamId == 1:
             self.debug('Move player to team 2')
             self._movePlayer(client, 2)
 
-        elif team2 - team1 >= (self._team_swap_threshold) and client.teamId == 2:
+        elif team2 - team1 >= self._team_swap_threshold and client.teamId == 2:
             self.debug('Move player to team 1')
             self._movePlayer(client, 1)
         else:
