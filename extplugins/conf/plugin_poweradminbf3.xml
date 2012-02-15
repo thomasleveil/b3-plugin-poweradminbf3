@@ -25,6 +25,7 @@
         <set name="roundnext-rnext">40</set>
         <set name="roundrestart-rrestart">40</set>
         <set name="kill">40</set>
+        <set name="idle">40</set>
 
         <set name="changeteam">20</set>
         <set name="swap">20</set>
