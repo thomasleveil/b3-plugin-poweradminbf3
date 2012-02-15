@@ -37,6 +37,7 @@ Commands
 !autobalance <off|on> - (de)activate the autobalancer
 !autoassign <off|on> - (de)activate the autoassigner which puts connecting player into the right team
 !endround <winning team id> - end current round and set winning team
+!idle <off|on|min> - set the idle kicker off/on or to the number of minute you wish
 
 
 Other features

@@ -43,9 +43,10 @@
 # 0.16.1  - fix command !endround
 # 0.16.2 - fix !changeteam for SquadDeathMatch0
 # 0.16.3 - Only start autobalancing when teams are out of balance by team_swap_threshold or more
+# 0.17  - add command !idle (Mario)
 
-__version__ = '0.16.3'
-__author__  = 'Courgette, 82ndab-Bravo17, ozon'
+__version__ = '0.17'
+__author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
 from b3.functions import soundex, levenshteinDistance
@@ -160,6 +161,7 @@ class Poweradminbf3Plugin(Plugin):
         self._autoscramble_rounds = False
         self._autoscramble_maps = False
         self._scrambler = Scrambler(self)
+        self._last_idleTimeout = 300
         Plugin.__init__(self, console, config)
 
 
@@ -662,6 +664,76 @@ class Poweradminbf3Plugin(Plugin):
                 self.console.game['vehicleSpawnAllowed'] = new_value
                 cmd.sayLoudOrPM(client=client, message="vehicle spawn is now [%s]" % data.upper())
 
+
+    def cmd_idle(self, data, client=None, cmd=None):
+        """\
+        <on|off|minutes> - Toggle idle on / off or the number of minutes you choose
+        """
+        def current_value():
+            try:
+                cvar = self.console.getCvar('idleTimeout')
+                if cvar is None:
+                    return 'unknown'
+                current_mode = cvar.getString()
+                self.console.game['idleTimeout'] = current_mode
+                return current_mode
+            except Exception, err:
+                self.error(err)
+                return 'unknown'
+
+        def human_readable_value(value):
+            if value == '0':
+                return 'OFF'
+            elif value.lower() == 'unknown':
+                return 'unknown'
+            else:
+                v = str(round(float(value)/60,1))
+                return "%s min" % v[:-2] if v.endswith('.0') else v
+
+        original_value = current_value()
+        if not data:
+            if original_value == 'unknown':
+                message = "unknown"
+            else:
+                if original_value == '0':
+                    message = "OFF"
+                else:
+                    message = human_readable_value(original_value)
+            cmd.sayLoudOrPM(client=client, message="Idle kick is [%s]" % message)
+        else:
+            minutes = None
+            try:
+                minutes = int(data)
+            except ValueError:
+                pass
+
+            expected_values = ('on', 'off')
+            if data.lower() not in expected_values and minutes is None:
+                client.message("unexpected value '%s'. Available modes : %s or a number of minutes" % (data, ', '.join(expected_values)))
+                return
+
+            new_value = None
+            if data.lower() == 'off':
+                self._last_idleTimeout = original_value
+                new_value = 0
+            elif data.lower() == 'on':
+                if original_value not in ('0', 'unknown'):
+                    client.message("Idle kick is already ON and set to %s" % human_readable_value(original_value))
+                    return
+                else:
+                    new_value = self._last_idleTimeout
+            else:
+                new_value = minutes * 60
+
+            try:
+                self.console.setCvar('idleTimeout', new_value)
+            except CommandFailedError, err:
+                client.message("could not change idle timeout : %s" % err.message)
+            else:
+                self.console.game['idleTimeout'] = str(new_value)
+                cmd.sayLoudOrPM(client=client, message="Idle kick is now [%s]" % human_readable_value( str(new_value)))
+
+
     def cmd_autoassign(self, data, client, cmd=None):
         """\
         <off|on> manage the auto assign
@@ -684,6 +756,7 @@ class Poweradminbf3Plugin(Plugin):
                 client.message('Autoassign now enabled')
             else:
                 client.message("invalid data. Expecting on or off")
+
 
     def cmd_autobalance(self, data, client, cmd=None):
         """\

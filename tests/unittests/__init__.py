@@ -1,3 +1,4 @@
+import logging
 import unittest
 # http://www.voidspace.org.uk/python/mock/mock.html
 from mock import Mock, callargs, DEFAULT as mock_DEFAULT, class_types
@@ -62,7 +63,11 @@ class Mockito(Mock):
             if call_args not in self.call_args_list:
                 failures.append(call_args)
         if len(failures):
-            raise AssertionError("expecting calls : %s but got %s" % (failures, self.call_args_list))
+            raise AssertionError("missing expected calls : %s. Got %s" % (failures, self.call_args_list))
+
+    def reset_mock(self):
+        self._expected_calls = dict()
+        super(Mockito, self).reset_mock()
 
     def __call__(self, *args, **kwargs):
         self.called = True
@@ -111,6 +116,9 @@ class Bf3TestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # less logging
+        logging.getLogger('output').setLevel(logging.CRITICAL)
+
         from b3.parsers.frostbite2.abstractParser import AbstractParser
         from b3.fake import FakeConsole
         AbstractParser.__bases__ = (FakeConsole,)
@@ -131,9 +139,6 @@ class Bf3TestCase(unittest.TestCase):
                 """)
         self.console = Bf3Parser(self.parser_conf)
         self.console.startup()
-
-        # less logging
-        self.console.verbose = self.console.verbose2 = self.console.debug = lambda *args, **kwargs:None
 
 
         # simulate game server actions
