@@ -44,8 +44,9 @@
 # 0.16.2 - fix !changeteam for SquadDeathMatch0
 # 0.16.3 - Only start autobalancing when teams are out of balance by team_swap_threshold or more
 # 0.17  - add command !idle (Mario)
+# 0.18  - add command !serverreboot and improve command !endround (Ozon)
 
-__version__ = '0.17'
+__version__ = '0.18'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -282,20 +283,37 @@ class Poweradminbf3Plugin(Plugin):
         except CommandFailedError, err:
             client.message('Error: %s' % err.message)
 
+    def cmd_serverreboot(self, data, client, cmd=None):
+        """\
+        Restart the Battlefield 3 Gameserver.
+        """
+        # @todo: add dialog - Demand that the user wants to restart really
+        try:
+            self.console.say('Reboot the Gameserver')
+            time.sleep(1)
+            self.console.write(('admin.shutDown',))
+        except CommandFailedError, err:
+            client.message('Error: %s' % err.message[0])
 
     def cmd_endround(self, data, client, cmd=None):
         """\
         <team id> - End current round. team id is the winning team
         """
+        winnerTeamID = ''
         if not data:
-            client.message('missing TeamID')
-            ## @todo Get/Set winning Team by current Ticketcount if no TeamID passed
+            winnerTeamID = self.current_winningTeamID()
         else:
             args = cmd.parseData(data)
-            self.console.say('End current round')
-            time.sleep(1)
+            if args[0].isdigit():
+                winnerTeamID = args[0]
+            else:
+                client.message('Use a number to determine the winning team.')
+
+        if winnerTeamID:
             try:
-                self.console.write(('mapList.endRound', args[0]))
+                self.console.say('End current round')
+                time.sleep(1)
+                self.console.write(('mapList.endRound', winnerTeamID))
             except CommandFailedError, err:
                 client.message('Error: %s' % err.message[0])
 
@@ -1227,7 +1245,7 @@ class Poweradminbf3Plugin(Plugin):
         team1, team2 = self.count_teams(clients)
         team1more = team1 - team2
         team2more = team2 - team1
-        self.debug('Team1 %s vs Team2 %s' % (team1, team2)) 
+        self.debug('Team1 %s vs Team2 %s' % (team1, team2))
         if team1more < self._team_swap_threshold and team2more < self._team_swap_threshold:
             return
         self._run_autobalancer = True
@@ -1335,4 +1353,21 @@ class Poweradminbf3Plugin(Plugin):
             self.debug(err)
             self.warning('Client %s was not in joined list' % client_name)
 
+    def current_winningTeamID(self):
+        """
+        Return winning TeamID from current game
+        """
+        scoretable = {}
+        # update values in self.console.game.serverinfo from current game
+        self.console.getServerInfo()
+        # if we have values in teamXscore, then put they our dict
+        if self.console.game.serverinfo['team1score']:
+            scoretable['1'] = float(self.console.game.serverinfo['team1score'])
+        if self.console.game.serverinfo['team2score']:
+            scoretable['2'] = float(self.console.game.serverinfo['team2score'])
+        if self.console.game.serverinfo['team3score']:
+            scoretable['3'] = float(self.console.game.serverinfo['team3score'])
+        if self.console.game.serverinfo['team4score']:
+            scoretable['4'] = float(self.console.game.serverinfo['team4score'])
 
+        return max(scoretable, key=scoretable.get)
