@@ -45,8 +45,9 @@
 # 0.16.3 - Only start autobalancing when teams are out of balance by team_swap_threshold or more
 # 0.17  - add command !idle (Mario)
 # 0.18  - add command !serverreboot and improve command !endround (Ozon)
+# 0.18.1 - Correct autobalance not restarting after 0.16.3 change
 
-__version__ = '0.18'
+__version__ = '0.18.1'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -216,10 +217,7 @@ class Poweradminbf3Plugin(Plugin):
             self._scrambler.onRoundOverTeamScores(event.data)
 
         elif event.type == b3.events.EVT_GAME_ROUND_START:
-            if self._autobalance:
-                (min, sec) = self.autobalance_time()
-                self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
-                self.console.cron + self._cronTab_autobalance
+            self.start_autobalance_cron()
             self.debug('manual scramble planned : '.rjust(30) + str(self._scrambling_planned))
             self.debug('auto scramble rounds : '.rjust(30) + str(self._autoscramble_rounds))
             self.debug('auto scramble maps : '.rjust(30) + str(self._autoscramble_maps))
@@ -800,9 +798,7 @@ class Poweradminbf3Plugin(Plugin):
                 else:
                     self._autobalance = True
                     if self._one_round_over:
-                        (min, sec) = self.autobalance_time()
-                        self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
-                        self.console.cron + self._cronTab_autobalance
+                        self.start_autobalance_cron()
                         client.message('Autobalance now enabled')
                     else:
                         client.message('Autobalance will be enabled on next round start')
@@ -1247,6 +1243,7 @@ class Poweradminbf3Plugin(Plugin):
         team2more = team2 - team1
         self.debug('Team1 %s vs Team2 %s' % (team1, team2))
         if team1more < self._team_swap_threshold and team2more < self._team_swap_threshold:
+            self.start_autobalance_cron()
             return
         self._run_autobalancer = True
         self.console.say('Auto balancing teams in %s seconds' % (self._autobalance_message_interval*2))
@@ -1304,11 +1301,7 @@ class Poweradminbf3Plugin(Plugin):
         if players > 0:
             self.console.say('Not enough players to move')
         self._run_autobalancer = False
-        if self._autobalance:
-            (min, sec) = self.autobalance_time()
-            self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
-            self.console.cron + self._cronTab_autobalance
-
+        self.start_autobalance_cron()
     def autobalance_time(self):
         sec = self._autobalance_timer
         min = int(time.strftime('%M'))
@@ -1321,7 +1314,18 @@ class Poweradminbf3Plugin(Plugin):
             min -= 60
 
         return min, sec
-
+    def start_autobalance_cron(self):
+        if self._cronTab_autobalance:
+            # remove existing crontab
+            self.debug('Removing autobalance timer')
+            self.console.cron - self._cronTab_autobalance
+        if self._autobalance:
+            self.debug('Restarting autobalance timer')
+            #self.console.say('Restarting autobalance timer')
+            (min, sec) = self.autobalance_time()
+            self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
+            self.console.cron + self._cronTab_autobalance
+        
     def count_teams(self, clients):
         """
         Return the number of players in each team
