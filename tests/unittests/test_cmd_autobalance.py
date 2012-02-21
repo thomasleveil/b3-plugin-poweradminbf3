@@ -2,7 +2,7 @@
 from mock import Mock, patch # http://www.voidspace.org.uk/python/mock/mock.html
 from b3.config import XmlConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
-from unittests import Bf3TestCase
+from tests.unittests import Bf3TestCase
 
 
 

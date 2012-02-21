@@ -42,9 +42,12 @@
 # 0.16  - add command !endround (ozon)
 # 0.16.1  - fix command !endround
 # 0.16.2 - fix !changeteam for SquadDeathMatch0
+# 0.16.3 - Only start autobalancing when teams are out of balance by team_swap_threshold or more
+# 0.17  - add command !idle (Mario)
+# 0.18  - add command !serverreboot and improve command !endround (Ozon)
 
-__version__ = '0.16.2'
-__author__  = 'Courgette, 82ndab-Bravo17, ozon'
+__version__ = '0.18'
+__author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
 from b3.functions import soundex, levenshteinDistance
@@ -159,6 +162,7 @@ class Poweradminbf3Plugin(Plugin):
         self._autoscramble_rounds = False
         self._autoscramble_maps = False
         self._scrambler = Scrambler(self)
+        self._last_idleTimeout = 300
         Plugin.__init__(self, console, config)
 
 
@@ -279,20 +283,37 @@ class Poweradminbf3Plugin(Plugin):
         except CommandFailedError, err:
             client.message('Error: %s' % err.message)
 
+    def cmd_serverreboot(self, data, client, cmd=None):
+        """\
+        Restart the Battlefield 3 Gameserver.
+        """
+        # @todo: add dialog - Demand that the user wants to restart really
+        try:
+            self.console.say('Reboot the Gameserver')
+            time.sleep(1)
+            self.console.write(('admin.shutDown',))
+        except CommandFailedError, err:
+            client.message('Error: %s' % err.message[0])
 
     def cmd_endround(self, data, client, cmd=None):
         """\
         <team id> - End current round. team id is the winning team
         """
+        winnerTeamID = ''
         if not data:
-            client.message('missing TeamID')
-            ## @todo Get/Set winning Team by current Ticketcount if no TeamID passed
+            winnerTeamID = self.current_winningTeamID()
         else:
             args = cmd.parseData(data)
-            self.console.say('End current round')
-            time.sleep(1)
+            if args[0].isdigit():
+                winnerTeamID = args[0]
+            else:
+                client.message('Use a number to determine the winning team.')
+
+        if winnerTeamID:
             try:
-                self.console.write(('mapList.endRound', args[0]))
+                self.console.say('End current round')
+                time.sleep(1)
+                self.console.write(('mapList.endRound', winnerTeamID))
             except CommandFailedError, err:
                 client.message('Error: %s' % err.message[0])
 
@@ -661,6 +682,76 @@ class Poweradminbf3Plugin(Plugin):
                 self.console.game['vehicleSpawnAllowed'] = new_value
                 cmd.sayLoudOrPM(client=client, message="vehicle spawn is now [%s]" % data.upper())
 
+
+    def cmd_idle(self, data, client=None, cmd=None):
+        """\
+        <on|off|minutes> - Toggle idle on / off or the number of minutes you choose
+        """
+        def current_value():
+            try:
+                cvar = self.console.getCvar('idleTimeout')
+                if cvar is None:
+                    return 'unknown'
+                current_mode = cvar.getString()
+                self.console.game['idleTimeout'] = current_mode
+                return current_mode
+            except Exception, err:
+                self.error(err)
+                return 'unknown'
+
+        def human_readable_value(value):
+            if value == '0':
+                return 'OFF'
+            elif value.lower() == 'unknown':
+                return 'unknown'
+            else:
+                v = str(round(float(value)/60,1))
+                return "%s min" % v[:-2] if v.endswith('.0') else v
+
+        original_value = current_value()
+        if not data:
+            if original_value == 'unknown':
+                message = "unknown"
+            else:
+                if original_value == '0':
+                    message = "OFF"
+                else:
+                    message = human_readable_value(original_value)
+            cmd.sayLoudOrPM(client=client, message="Idle kick is [%s]" % message)
+        else:
+            minutes = None
+            try:
+                minutes = int(data)
+            except ValueError:
+                pass
+
+            expected_values = ('on', 'off')
+            if data.lower() not in expected_values and minutes is None:
+                client.message("unexpected value '%s'. Available modes : %s or a number of minutes" % (data, ', '.join(expected_values)))
+                return
+
+            new_value = None
+            if data.lower() == 'off':
+                self._last_idleTimeout = original_value
+                new_value = 0
+            elif data.lower() == 'on':
+                if original_value not in ('0', 'unknown'):
+                    client.message("Idle kick is already ON and set to %s" % human_readable_value(original_value))
+                    return
+                else:
+                    new_value = self._last_idleTimeout
+            else:
+                new_value = minutes * 60
+
+            try:
+                self.console.setCvar('idleTimeout', new_value)
+            except CommandFailedError, err:
+                client.message("could not change idle timeout : %s" % err.message)
+            else:
+                self.console.game['idleTimeout'] = str(new_value)
+                cmd.sayLoudOrPM(client=client, message="Idle kick is now [%s]" % human_readable_value( str(new_value)))
+
+
     def cmd_autoassign(self, data, client, cmd=None):
         """\
         <off|on> manage the auto assign
@@ -683,6 +774,7 @@ class Poweradminbf3Plugin(Plugin):
                 client.message('Autoassign now enabled')
             else:
                 client.message("invalid data. Expecting on or off")
+
 
     def cmd_autobalance(self, data, client, cmd=None):
         """\
@@ -1133,11 +1225,11 @@ class Poweradminbf3Plugin(Plugin):
         self.debug('Team1 = %s' % team1)
         self.debug('Team2 = %s' % team2)
         self.debug('New Client team is %s' % client.teamId)
-        if team1 - team2 >= (self._team_swap_threshold) and client.teamId == 1:
+        if team1 - team2 >= self._team_swap_threshold and client.teamId == 1:
             self.debug('Move player to team 2')
             self._movePlayer(client, 2)
 
-        elif team2 - team1 >= (self._team_swap_threshold) and client.teamId == 2:
+        elif team2 - team1 >= self._team_swap_threshold and client.teamId == 2:
             self.debug('Move player to team 1')
             self._movePlayer(client, 1)
         else:
@@ -1153,7 +1245,7 @@ class Poweradminbf3Plugin(Plugin):
         team1, team2 = self.count_teams(clients)
         team1more = team1 - team2
         team2more = team2 - team1
-        self.debug('Team1 %s vs Team2 %s' % (team1, team2)) 
+        self.debug('Team1 %s vs Team2 %s' % (team1, team2))
         if team1more < self._team_swap_threshold and team2more < self._team_swap_threshold:
             return
         self._run_autobalancer = True
@@ -1261,4 +1353,21 @@ class Poweradminbf3Plugin(Plugin):
             self.debug(err)
             self.warning('Client %s was not in joined list' % client_name)
 
+    def current_winningTeamID(self):
+        """
+        Return winning TeamID from current game
+        """
+        scoretable = {}
+        # update values in self.console.game.serverinfo from current game
+        self.console.getServerInfo()
+        # if we have values in teamXscore, then put they our dict
+        if self.console.game.serverinfo['team1score']:
+            scoretable['1'] = float(self.console.game.serverinfo['team1score'])
+        if self.console.game.serverinfo['team2score']:
+            scoretable['2'] = float(self.console.game.serverinfo['team2score'])
+        if self.console.game.serverinfo['team3score']:
+            scoretable['3'] = float(self.console.game.serverinfo['team3score'])
+        if self.console.game.serverinfo['team4score']:
+            scoretable['4'] = float(self.console.game.serverinfo['team4score'])
 
+        return max(scoretable, key=scoretable.get)

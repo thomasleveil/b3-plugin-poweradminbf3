@@ -5,7 +5,7 @@ import b3
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
-from unittests import Bf3TestCase
+from tests.unittests import Bf3TestCase
 
 
 class Test_cmd_unlockmode(Bf3TestCase):
