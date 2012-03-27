@@ -79,6 +79,18 @@ Commands
 !serverreboot
   restart the BF3 gameserver
 
+!yell <msg>
+  yell a message to all players
+
+!yellplayer <player name> <msg>
+  yell a message to a given player
+
+!yellteam <msg>
+  yell a message to your teammates
+
+!yellsquad <msg>
+  yell a message to your squadmates
+
 
 
 Other features

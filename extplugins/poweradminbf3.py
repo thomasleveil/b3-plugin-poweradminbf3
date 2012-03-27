@@ -46,8 +46,8 @@
 # 0.17  - add command !idle (Mario)
 # 0.18  - add command !serverreboot and improve command !endround (Ozon)
 # 0.18.1 - Correct autobalance not restarting after 0.16.3 change
-
-__version__ = '0.18.1'
+# 0.19 - add commands !yell !yellplayer !yellteam !yellsquad (requires B3 1.8.1+)
+__version__ = '0.19'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -164,6 +164,7 @@ class Poweradminbf3Plugin(Plugin):
         self._autoscramble_maps = False
         self._scrambler = Scrambler(self)
         self._last_idleTimeout = 300
+        self._yell_duration = 10
         Plugin.__init__(self, console, config)
 
 
@@ -186,6 +187,7 @@ class Poweradminbf3Plugin(Plugin):
         self._load_scrambler()
         self._load_configmanager_config_path()
         self._load_configmanager()
+        self._load_yell_duration()
 
     def startup(self):
         """\
@@ -813,6 +815,48 @@ class Poweradminbf3Plugin(Plugin):
 
 
 
+    def cmd_yell(self, data, client, cmd=None):
+        """\
+        <msg>- Yell message to all players
+        """
+        if client :
+            if not data:
+                client.message('missing parameter, try !help yell')
+            else:
+                self.console.write(self.console.getCommand('yell', message=data, yell_duration=self._yell_duration))
+
+    def cmd_yellteam(self, data, client, cmd=None):
+        """\
+        <msg> Yell message to all players of your team
+        """
+        if not data:
+            client.message('missing parameter, try !help yellteam')
+        else:
+            self.console.write(self.console.getCommand('yellTeam', message=data, teamId=client.teamId, yell_duration=self._yell_duration))
+
+    def cmd_yellsquad(self, data, client, cmd=None):
+        """\
+        <msg> Yell message to all players of your squad
+        """
+        if not data:
+            client.message('missing parameter, try !help yellsquad')
+        else:
+            self.console.write(self.console.getCommand('yellSquad', message=data, teamId=client.teamId, squadId=client.squad, yell_duration=self._yell_duration))
+
+    def cmd_yellplayer(self, data, client, cmd=None):
+        """\
+        <player> <msg> - Yell message to a player
+        """
+        m = self._adminPlugin.parseUserCmd(data)
+        if not m:
+            client.message('invalid parameters, try !help yellplayer')
+            return
+        cid, message = m
+        sclient = self._adminPlugin.findClientPrompt(cid, client)
+        if sclient:
+            self.console.write(self.console.getCommand('bigmessage', message=message, cid=sclient.cid, yell_duration=self._yell_duration))
+
+
 ################################################################################################################
 #
 #    Other methods
@@ -954,10 +998,10 @@ class Poweradminbf3Plugin(Plugin):
         try:
             self._team_swap_threshold = self.config.getint('preferences', 'team_swap_threshold')
         except NoOptionError:
-            self.info('No config option \"preferences\\team_swap_threshold\" found. Using default value : %s' % self._team_swap_threshold)
+            self.info(r'No config option "preferences\team_swap_threshold" found. Using default value : %s' % self._team_swap_threshold)
         except ValueError, err:
             self.debug(err)
-            self.warning('Could not read level value from config option \"preferences\\team_swap_threshold\". Using default value \"%s\" instead. (%s)' % (self._team_swap_threshold, err))
+            self.warning(r'Could not read level value from config option "preferences\team_swap_threshold". Using default value "%s" instead. (%s)' % (self._team_swap_threshold, err))
         except Exception, err:
             self.error(err)
         if self._team_swap_threshold < 2:
@@ -968,9 +1012,26 @@ class Poweradminbf3Plugin(Plugin):
         try:
             self._configmanager = self.config.getboolean('configmanager', 'status')
             self.debug('Configmanager: %s' % self._configmanager)
-        except:
-            self.debug('Unable to load configmanager status from config file, disabling it')
+        except Exception, err:
+            self.debug('Unable to load configmanager status from config file, disabling it', err)
             self._configmanager = False
+
+    def _load_yell_duration(self):
+        try:
+            duration = self.config.getfloat('preferences', 'yell_duration')
+            if duration < .5:
+                raise ValueError("cannot be lower than half a second")
+            self._yell_duration = duration
+            self.debug('yell_duration: %s' % self._yell_duration)
+        except NoOptionError:
+            self.info(r'No config option "preferences\yell_duration" found. Using default value : %s' % self._yell_duration)
+        except ValueError, err:
+            self.debug(err)
+            self.warning(r'Could not read value from config option "preferences\yell_duration". Using default value "%s" instead. (%s)' % (self._yell_duration, err))
+        except Exception, err:
+            self.error(err)
+
+
 
     def _getCmd(self, cmd):
         cmd = 'cmd_%s' % cmd
