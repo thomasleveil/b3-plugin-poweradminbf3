@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-from mock import patch, call
+from mock import patch, call, Mock
 import time
 from b3.config import XmlConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
@@ -24,14 +24,16 @@ class Test_cmd_nuke(Bf3TestCase):
         self.sleep_patcher = patch.object(time, 'sleep')
         self.sleep_patcher.start()
 
+        self.console.say = Mock()
+        self.console.saybig = Mock()
+
         self.moderator.connects("moderator")
         self.moderator.teamId = 1
 
         self.joe.connects('joe')
         self.joe.teamId = 2
 
-        self.console.getPlayerList = Mockito()
-        self.console.getPlayerList.expect().thenReturn({self.moderator.cid: self.moderator, self.joe.cid: self.joe})
+
 
     def tearDown(self):
         Bf3TestCase.tearDown(self)
@@ -45,6 +47,7 @@ class Test_cmd_nuke(Bf3TestCase):
         self.assertEqual(1, len(self.moderator.message_history))
         self.assertEqual('missing parameter, try !help nuke', self.moderator.message_history[0])
 
+
     def test_bad_argument(self):
         self.moderator.connects("moderator")
         self.moderator.message_history = []
@@ -53,18 +56,28 @@ class Test_cmd_nuke(Bf3TestCase):
         self.assertEqual('invalid parameter. expecting all, ru or us', self.moderator.message_history[0])
 
 
-
     def test_all(self):
         self.moderator.says("!nuke all")
         self.console.write.assert_has_calls([call(('admin.killPlayer', 'moderator')), call(('admin.killPlayer', 'joe'))])
+        self.console.say.assert_has_calls([call('Killing all players')])
+        self.console.saybig.assert_called_with('Incoming nuke warning')
+
+
+    def test_all_with_reason(self):
+        self.moderator.says("!nuke all base raping")
+        self.console.write.assert_has_calls([call(('admin.killPlayer', 'moderator')), call(('admin.killPlayer', 'joe'))])
+        self.console.say.assert_has_calls([call('Killing all players'), call('Nuke reason : base raping')])
+        self.console.saybig.assert_called_with('Incoming nuke warning')
 
 
     def test_us(self):
         self.moderator.says("!nuke us")
         self.console.write.assert_has_calls([call(('admin.killPlayer', 'moderator'))])
+        self.console.saybig.assert_called_with('Incoming nuke warning')
 
 
     def test_ru(self):
         self.moderator.says("!nuke ru")
         self.console.write.assert_has_calls([call(('admin.killPlayer', 'joe'))])
+        self.console.saybig.assert_called_with('Incoming nuke warning')
 

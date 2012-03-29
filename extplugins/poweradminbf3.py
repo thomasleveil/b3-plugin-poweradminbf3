@@ -47,7 +47,9 @@
 # 0.18  - add command !serverreboot and improve command !endround (Ozon)
 # 0.18.1 - Correct autobalance not restarting after 0.16.3 change
 # 0.19 - add commands !yell !yellplayer !yellteam !yellsquad (requires B3 1.8.1+)
-__version__ = '0.19'
+# 0.20 - add command !nuke
+#
+__version__ = '0.20'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -897,7 +899,7 @@ class Poweradminbf3Plugin(Plugin):
                     else:
                         client.message('Error: %s' % err.message)
 
-            players = self.console.getPlayerList().values()
+            players = self.console.clients.getList()
             if clean_team_name == 'all':
                 for player in players:
                     kill(player, reason)
