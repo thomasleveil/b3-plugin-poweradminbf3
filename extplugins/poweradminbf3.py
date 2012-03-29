@@ -857,6 +857,59 @@ class Poweradminbf3Plugin(Plugin):
             self.console.write(self.console.getCommand('bigmessage', message=message, cid=sclient.cid, yell_duration=self._yell_duration))
 
 
+    def cmd_nuke(self, data, client, cmd=None):
+        """\
+        <all|ru|us> [reason] - Kill all players (or players from a given team) without scoring effects
+        """
+        m = self._adminPlugin.parseUserCmd(data)
+        if not m:
+            client.message('missing parameter, try !help nuke')
+            return
+        team_name, reason = m
+        clean_team_name = team_name.lower()
+        if not clean_team_name or clean_team_name not in ('all', 'ru', 'us'):
+            client.message("invalid parameter. expecting all, ru or us")
+        else:
+            self.console.saybig("Incoming nuke warning")
+
+            if clean_team_name == 'all':
+                self.console.say("Killing all players")
+            elif clean_team_name == 'ru':
+                self.console.say("Killing Russian team")
+            elif clean_team_name == 'us':
+                self.console.say("Killing USA team")
+
+            time.sleep(2.5)
+
+            if reason:
+                self.console.say("Nuke reason : %s" % reason)
+
+            def kill(sclient, reason="Nuked by admin"):
+                try:
+                    self.console.write(('admin.killPlayer', sclient.cid))
+                    if reason:
+                        sclient.message("Nuke reason: %s" % reason)
+                    else:
+                        sclient.message("Nuked by admin")
+                except CommandFailedError, err:
+                    if err.message[0] == "SoldierNotAlive":
+                        client.message("%s is already dead" % sclient.name)
+                    else:
+                        client.message('Error: %s' % err.message)
+
+            players = self.console.getPlayerList().values()
+            if clean_team_name == 'all':
+                for player in players:
+                    kill(player, reason)
+            elif clean_team_name == 'us':
+                for player in [x for x in players if x.teamId == 1]:
+                    kill(player, reason)
+            elif clean_team_name == 'ru':
+                for player in [x for x in players if x.teamId == 2]:
+                    kill(player, reason)
+
+
+
 ################################################################################################################
 #
 #    Other methods

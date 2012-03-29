@@ -91,6 +91,8 @@ Commands
 !yellsquad <msg>
   yell a message to your squadmates
 
+!nuke <all|us|ru>
+  kill all players or players from a given team
 
 
 Other features

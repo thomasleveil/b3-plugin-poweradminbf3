@@ -4,10 +4,6 @@ from mock import Mock # http://www.voidspace.org.uk/python/mock/mock.html
 from poweradminbf3 import Poweradminbf3Plugin
 
 
-from tests.unittests import extends_mock
-extends_mock()
-
-
 class Test_issue_17_load_server_config(unittest.TestCase):
 
     def setUp(self):
@@ -25,7 +21,7 @@ class Test_issue_17_load_server_config(unittest.TestCase):
             "   ",
         ))
         self.assertEqual(1,self.console.write.call_count)
-        self.console.write.assert_was_called_with(('vars.serverMessage', '"Welcome to our Server Play as a team"'))
+        self.console.write.assert_any_call(('vars.serverMessage', '"Welcome to our Server Play as a team"'))
 
 
 if __name__ == '__main__':

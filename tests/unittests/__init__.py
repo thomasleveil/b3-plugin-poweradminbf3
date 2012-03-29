@@ -1,7 +1,7 @@
 import logging
 import unittest
 # http://www.voidspace.org.uk/python/mock/mock.html
-from mock import Mock, callargs, DEFAULT as mock_DEFAULT, class_types
+import mock
 from b3 import TEAM_UNKNOWN
 from b3.config import XmlConfigParser
 from b3.fake import FakeClient
@@ -9,33 +9,9 @@ from b3.parsers.bf3 import Bf3Parser
 from b3.plugins.admin import AdminPlugin
 
 
-
-def extends_mock():
-    # extend the Mock class
-    def assert_was_called_with(self, *args, **kwargs):
-        """
-        assert that the mock was called with the specified arguments at least once.
-
-        Raises an AssertionError if the args and keyword args passed in are
-        different from all calls to the mock.
-        """
-        if self.call_args is None:
-            raise AssertionError('Expected: %s\nNot called' % ((args, kwargs),))
-        found = False
-        for call_args in self.call_args_list:
-            if call_args == (args, kwargs):
-                found = True
-                break
-        if not found:
-            raise AssertionError(
-                'Expected: %s\nCalled at least once with: %s' % ((args, kwargs), self.call_args_list)
-            )
-    Mock.assert_was_called_with = assert_was_called_with
-
-
 class Expector(object):
     def __init__(self):
-        self._return_value = Mock()
+        self._return_value = mock.Mock()
         self._return_exception = None
 
     def thenReturn(self, obj):
@@ -45,7 +21,7 @@ class Expector(object):
         self._return_exception = exception
 
 
-class Mockito(Mock):
+class Mockito(mock.Mock):
 
     def __init__(self, *args, **kwargs):
         super(Mockito, self).__init__(*args, **kwargs)
@@ -54,57 +30,93 @@ class Mockito(Mock):
 
     def expect(self, *args, **kwargs):
         expector = Expector()
-        self._expected_calls[repr((args, kwargs))] = (expector, callargs((args, kwargs)))
+        self._expected_calls[repr(mock.call(args, kwargs))] = (expector, mock._Call((args, kwargs), two=True))
         return expector
 
     def verify_expected_calls(self):
-        failures = []
         for expected_calls, call_args in self._expected_calls.values():
             if call_args not in self.call_args_list:
-                failures.append(call_args)
-        if len(failures):
-            raise AssertionError("missing expected calls : %s. Got %s" % (failures, self.call_args_list))
+                raise AssertionError(
+                    '%s call not found' % repr(call_args)
+                )
 
     def reset_mock(self):
         self._expected_calls = dict()
         super(Mockito, self).reset_mock()
 
-    def __call__(self, *args, **kwargs):
+    def _mock_call(_mock_self, *args, **kwargs):
+        self = _mock_self
         self.called = True
         self.call_count += 1
-        self.call_args = callargs((args, kwargs))
-        self.call_args_list.append(callargs((args, kwargs)))
+        self.call_args = mock._Call((args, kwargs), two=True)
+        self.call_args_list.append(mock._Call((args, kwargs), two=True))
 
-        parent = self._parent
-        name = self._name
-        while parent is not None:
-            parent.method_calls.append(callargs((name, args, kwargs)))
-            if parent._parent is None:
+        _new_name = self._mock_new_name
+        _new_parent = self._mock_new_parent
+        self.mock_calls.append(mock._Call(('', args, kwargs)))
+
+        seen = set()
+        skip_next_dot = _new_name == '()'
+        do_method_calls = self._mock_parent is not None
+        name = self._mock_name
+        while _new_parent is not None:
+            this_mock_call = mock._Call((_new_name, args, kwargs))
+            if _new_parent._mock_new_name:
+                dot = '.'
+                if skip_next_dot:
+                    dot = ''
+
+                skip_next_dot = False
+                if _new_parent._mock_new_name == '()':
+                    skip_next_dot = True
+
+                _new_name = _new_parent._mock_new_name + dot + _new_name
+
+            if do_method_calls:
+                if _new_name == name:
+                    this_method_call = this_mock_call
+                else:
+                    this_method_call = mock._Call(name, args, kwargs)
+                _new_parent.method_calls.append(this_method_call)
+
+                do_method_calls = _new_parent._mock_parent is not None
+                if do_method_calls:
+                    name = _new_parent._mock_name + '.' + name
+
+            _new_parent.mock_calls.append(this_mock_call)
+            _new_parent = _new_parent._mock_new_parent
+
+            # use ids here so as not to call __hash__ on the mocks
+            _new_parent_id = id(_new_parent)
+            if _new_parent_id in seen:
                 break
-            name = parent._name + '.' + name
-            parent = parent._parent
+            seen.add(_new_parent_id)
 
-        if repr((args, kwargs)) in self._expected_calls:
-            expector, call_args = self._expected_calls[repr((args, kwargs))]
+
+        if repr(mock.call(args, kwargs)) in self._expected_calls:
+            expector, call_args = self._expected_calls[repr(mock.call(args, kwargs))]
             if expector._return_exception:
                 raise expector._return_exception
             else:
                 return expector._return_value
 
-        ret_val = mock_DEFAULT
-        if self.side_effect is not None:
-            if (isinstance(self.side_effect, BaseException) or
-                isinstance(self.side_effect, class_types) and
-                issubclass(self.side_effect, BaseException)):
-                raise self.side_effect
+        ret_val = mock.DEFAULT
+        effect = self.side_effect
+        if effect is not None:
+            if mock._is_exception(effect):
+                raise effect
 
-            ret_val = self.side_effect(*args, **kwargs)
-            if ret_val is mock_DEFAULT:
+            if not mock._callable(effect):
+                return next(effect)
+
+            ret_val = effect(*args, **kwargs)
+            if ret_val is mock.DEFAULT:
                 ret_val = self.return_value
 
-        if self._wraps is not None and self._return_value is mock_DEFAULT:
-            return self._wraps(*args, **kwargs)
-        if ret_val is mock_DEFAULT:
+        if (self._mock_wraps is not None and
+            self._mock_return_value is mock.DEFAULT):
+            return self._mock_wraps(*args, **kwargs)
+        if ret_val is mock.DEFAULT:
             ret_val = self.return_value
         return ret_val
 
@@ -117,7 +129,7 @@ class Bf3TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # less logging
-        logging.getLogger('output').setLevel(logging.CRITICAL)
+        logging.getLogger('output').setLevel(logging.ERROR)
 
         from b3.parsers.frostbite2.abstractParser import AbstractParser
         from b3.fake import FakeConsole
@@ -147,7 +159,7 @@ class Bf3TestCase(unittest.TestCase):
             if msg[0] == 'admin.movePlayer':
                 self.console.routeFrostbitePacket(['player.onTeamChange'] + list(msg[1:]))
             else:
-                return mock_DEFAULT # will make Mockito fall back on return_value and wrapped function
+                return mock.DEFAULT # will make Mockito fall back on return_value and wrapped function
         self.console.write = Mockito(wraps=self.console.write, side_effect=frostbitewrite)
 
 
@@ -170,3 +182,7 @@ class Bf3TestCase(unittest.TestCase):
         self.moderator = FakeClient(self.console, name="Moderator", exactName="Moderator", guid="sdf455ezr", groupBits=8, team=TEAM_UNKNOWN, teamId=0, squad=0)
         self.admin = FakeClient(self.console, name="Level-40-Admin", exactName="Level-40-Admin", guid="875sasda", groupBits=16, team=TEAM_UNKNOWN, teamId=0, squad=0)
         self.superadmin = FakeClient(self.console, name="God", exactName="God", guid="f4qfer654r", groupBits=128, team=TEAM_UNKNOWN, teamId=0, squad=0)
+
+
+    def tearDown(self):
+        self.console.working = False

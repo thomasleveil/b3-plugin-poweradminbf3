@@ -5,9 +5,6 @@ from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
 
 
-from tests.unittests import extends_mock
-extends_mock()
-
 
 class Test_load_server_config(unittest.TestCase):
 
@@ -72,7 +69,7 @@ class Test_load_server_config(unittest.TestCase):
             "vars.withnoarg    ",
         ))
         self.assertEqual(4,self.console.write.call_count)
-        self.console.write.assert_called_with(('vars.withnoarg',))
+        self.console.write.assert_any_call(('vars.withnoarg',))
 
     def test_read_cvars_with_result(self):
         self.console.write.return_value = ['theResult']
@@ -80,9 +77,9 @@ class Test_load_server_config(unittest.TestCase):
         client = Mock()
         self.p.load_server_config(client, "theConfName", ("vars.withnoarg",))
         self.assertTrue(self.console.write.called)
-        self.console.write.assert_called_with(('vars.withnoarg',))
+        self.console.write.assert_any_call(('vars.withnoarg',))
         self.assertTrue(client.message.called)
-        client.message.assert_was_called_with('vars.withnoarg is "theResult"')
+        client.message.assert_any_call('vars.withnoarg is "theResult"')
 
     def test_read_cvars_with_error(self):
         self.console.write.side_effect = CommandFailedError('theError')
@@ -90,8 +87,8 @@ class Test_load_server_config(unittest.TestCase):
         client = Mock()
         self.p.load_server_config(client, "theConfName", ("vars.withnoarg",))
         self.assertTrue(self.console.write.called)
-        self.console.write.assert_called_with(('vars.withnoarg',))
-        client.message.assert_was_called_with('Error "theError" received at line 1 when sending "vars.withnoarg" to server')
+        self.console.write.assert_any_call(('vars.withnoarg',))
+        client.message.assert_any_call('Error "theError" received at line 1 when sending "vars.withnoarg" to server')
 
     def test_write_cvars_no_result(self):
         self.console.write.return_value = []
@@ -105,9 +102,9 @@ class Test_load_server_config(unittest.TestCase):
             "vars.theCvar 5",
         ))
         self.assertEqual(5,self.console.write.call_count)
-        self.console.write.assert_was_called_with(('vars.theCvar', 'theValue'))
-        self.console.write.assert_was_called_with(('vars.theCvar', 'theValue1 theValue2 theValue3'))
-        self.console.write.assert_was_called_with(('vars.theCvar', '5'))
+        self.console.write.assert_any_call(('vars.theCvar', 'theValue'))
+        self.console.write.assert_any_call(('vars.theCvar', 'theValue1 theValue2 theValue3'))
+        self.console.write.assert_any_call(('vars.theCvar', '5'))
 
     def test_write_cvars_with_result(self):
         self.console.write.return_value = ['theResult']
@@ -115,9 +112,9 @@ class Test_load_server_config(unittest.TestCase):
         client = Mock()
         self.p.load_server_config(client, "theConfName", ("vars.theCvar theValue",))
         self.assertTrue(self.console.write.called)
-        self.console.write.assert_called_with(('vars.theCvar', 'theValue'))
+        self.console.write.assert_any_call(('vars.theCvar', 'theValue'))
         self.assertEqual(1, client.message.call_count)
-        client.message.assert_was_called_with('config "theConfName" loaded')
+        client.message.assert_any_call('config "theConfName" loaded')
 
     def test_write_cvars_with_error(self):
         self.console.write.side_effect = CommandFailedError('theError')
@@ -125,8 +122,8 @@ class Test_load_server_config(unittest.TestCase):
         client = Mock()
         self.p.load_server_config(client, "theConfName", ("vars.theCvar   theValue",))
         self.assertTrue(self.console.write.called)
-        self.console.write.assert_called_with(('vars.theCvar', 'theValue'))
-        client.message.assert_was_called_with('Error "theError" received at line 1 when sending "vars.theCvar   theValue" to server')
+        self.console.write.assert_any_call(('vars.theCvar', 'theValue'))
+        client.message.assert_any_call('Error "theError" received at line 1 when sending "vars.theCvar   theValue" to server')
 
 
     def test_map_item(self):
@@ -135,9 +132,9 @@ class Test_load_server_config(unittest.TestCase):
         client = Mock()
         self.p.load_server_config(client, "theConfName", ("MAP_001 gamemode1 3",))
         self.assertEqual(3,self.console.write.call_count)
-        self.console.write.assert_was_called_with(('mapList.clear',))
-        self.console.write.assert_was_called_with(('mapList.add', 'MAP_001', 'gamemode1', '3'))
-        self.console.write.assert_was_called_with(('mapList.save',))
+        self.console.write.assert_any_call(('mapList.clear',))
+        self.console.write.assert_any_call(('mapList.add', 'MAP_001', 'gamemode1', '3'))
+        self.console.write.assert_any_call(('mapList.save',))
 
     def test_map_item_with_error(self):
         def my_write(*args):
@@ -149,10 +146,10 @@ class Test_load_server_config(unittest.TestCase):
         client = Mock()
         self.p.load_server_config(client, "theConfName", ("MAP_001 gamemode1 3",))
         self.assertEqual(3,self.console.write.call_count)
-        self.console.write.assert_was_called_with(('mapList.clear',))
-        self.console.write.assert_was_called_with(('mapList.add', 'MAP_001', 'gamemode1', '3'))
-        self.console.write.assert_was_called_with(('mapList.save',))
-        client.message.assert_was_called_with('Error adding map "MAP_001 gamemode1 3" on line 1 : theError')
+        self.console.write.assert_any_call(('mapList.clear',))
+        self.console.write.assert_any_call(('mapList.add', 'MAP_001', 'gamemode1', '3'))
+        self.console.write.assert_any_call(('mapList.save',))
+        client.message.assert_any_call('Error adding map "MAP_001 gamemode1 3" on line 1 : theError')
 
 
 
