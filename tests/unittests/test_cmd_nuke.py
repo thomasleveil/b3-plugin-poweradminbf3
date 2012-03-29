@@ -3,8 +3,7 @@ from mock import patch, call, Mock
 import time
 from b3.config import XmlConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
-from tests.unittests import Bf3TestCase
-from unittests import Mockito
+from tests.unittests import Bf3TestCase, Mockito
 
 class Test_cmd_nuke(Bf3TestCase):
     def setUp(self):
