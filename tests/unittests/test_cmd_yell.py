@@ -40,7 +40,7 @@ class Test_config(Bf3TestCase):
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
-        self.assertEqual(1.3, self.p._yell_duration)
+        self.assertEqual(10, self.p._yell_duration)
 
     def test_yell_duration_too_low(self):
         self.conf = XmlConfigParser()
@@ -94,7 +94,7 @@ class Test_cmd_yell(Bf3TestCase):
                 <set name="yell">20</set>
             </settings>
             <settings name="preferences">
-                <set name="yell_duration">2.1</set>
+                <set name="yell_duration">2</set>
             </settings>
         </configuration>
         """)
@@ -113,7 +113,7 @@ class Test_cmd_yell(Bf3TestCase):
     def test_nominal(self):
         self.moderator.connects("moderator")
         self.moderator.says("!yell changing map soon !")
-        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2.1'))
+        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2'))
 
 
 
@@ -128,7 +128,7 @@ class Test_cmd_yellteam(Bf3TestCase):
                 <set name="yellteam">20</set>
             </settings>
             <settings name="preferences">
-                <set name="yell_duration">2.1</set>
+                <set name="yell_duration">2</set>
             </settings>
         </configuration>
         """)
@@ -148,7 +148,7 @@ class Test_cmd_yellteam(Bf3TestCase):
         self.moderator.connects("moderator")
         self.moderator.teamId = 3
         self.moderator.says("!yellteam changing map soon !")
-        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2.1', 'team', '3'))
+        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2', 'team', '3'))
 
 
 
@@ -163,7 +163,7 @@ class Test_cmd_yellsquad(Bf3TestCase):
                 <set name="yellsquad">20</set>
             </settings>
             <settings name="preferences">
-                <set name="yell_duration">2.1</set>
+                <set name="yell_duration">2</set>
             </settings>
         </configuration>
         """)
@@ -184,7 +184,7 @@ class Test_cmd_yellsquad(Bf3TestCase):
         self.moderator.teamId = 3
         self.moderator.squad = 4
         self.moderator.says("!yellsquad changing map soon !")
-        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2.1', 'squad', '3', '4'))
+        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2', 'squad', '3', '4'))
 
 
 class Test_cmd_yellplayer(Bf3TestCase):
@@ -198,7 +198,7 @@ class Test_cmd_yellplayer(Bf3TestCase):
                 <set name="yellplayer">20</set>
             </settings>
             <settings name="preferences">
-                <set name="yell_duration">2.1</set>
+                <set name="yell_duration">2</set>
             </settings>
         </configuration>
         """)
@@ -218,5 +218,5 @@ class Test_cmd_yellplayer(Bf3TestCase):
         self.joe.connects('joe')
         self.moderator.connects("moderator")
         self.moderator.says("!yellplayer joe changing map soon !")
-        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2.1', 'player', 'joe'))
+        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2', 'player', 'joe'))
 

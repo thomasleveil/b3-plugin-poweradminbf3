@@ -48,8 +48,9 @@
 # 0.18.1 - Correct autobalance not restarting after 0.16.3 change
 # 0.19 - add commands !yell !yellplayer !yellteam !yellsquad (requires B3 1.8.1+)
 # 0.20 - add command !nuke
+# 1.0 - fixes !yell
 #
-__version__ = '0.20'
+__version__ = '1.0'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -1073,9 +1074,9 @@ class Poweradminbf3Plugin(Plugin):
 
     def _load_yell_duration(self):
         try:
-            duration = self.config.getfloat('preferences', 'yell_duration')
-            if duration < .5:
-                raise ValueError("cannot be lower than half a second")
+            duration = self.config.getint('preferences', 'yell_duration')
+            if duration < 1:
+                raise ValueError("cannot be lower than a second")
             self._yell_duration = duration
             self.debug('yell_duration: %s' % self._yell_duration)
         except NoOptionError:
