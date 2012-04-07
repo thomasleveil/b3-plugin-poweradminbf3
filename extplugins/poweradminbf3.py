@@ -50,10 +50,12 @@
 # 0.20 - add command !nuke
 # 1.0 - fixes !yell
 # 1.1 - fixes !yell after B3 1.8.0 changes
-__version__ = '1.1'
+# 1.2 - add config option scramber\gamemodes_blacklist to have the auto scrambler ignoring some gamemodes. requires B3 1.8.2dev1+
+__version__ = '1.2'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
+import ConfigParser
 from b3.functions import soundex, levenshteinDistance
 import random
 import time
@@ -165,6 +167,7 @@ class Poweradminbf3Plugin(Plugin):
         self._scrambling_planned = False
         self._autoscramble_rounds = False
         self._autoscramble_maps = False
+        self._autoscramble_gamemode_blacklist = []
         self._scrambler = Scrambler(self)
         self._last_idleTimeout = 300
         self._yell_duration = 10
@@ -232,12 +235,16 @@ class Poweradminbf3Plugin(Plugin):
                 self._scrambler.scrambleTeams()
                 self._scrambling_planned = False
             else:
-                if self._autoscramble_rounds:
-                    self.debug('auto scramble is planned for rounds')
-                    self._scrambler.scrambleTeams()
-                elif self._autoscramble_maps and self.console.game.rounds == 0:
-                    self.debug('auto scramble is planned for maps')
-                    self._scrambler.scrambleTeams()
+                if self.console.game.gameType not in self._autoscramble_gamemode_blacklist:
+                    if self._autoscramble_rounds:
+                        self.debug('auto scramble is planned for rounds')
+                        self._scrambler.scrambleTeams()
+                    elif self._autoscramble_maps and self.console.game.rounds == 1:
+                        self.debug('auto scramble is planned for maps')
+                        self._scrambler.scrambleTeams()
+                else:
+                    self.info(r"ignoring auto scramble as current gamemode '%s' is in the blacklist (see config option"
+                        + " 'scrambler\gamemodes_blacklist')" % self._autoscramble_gamemode_blacklist)
             self.debug('Scrambling finished, Autoassign now active')
             self._scramblingdone = True
 
@@ -948,6 +955,29 @@ class Poweradminbf3Plugin(Plugin):
             self._autoscramble_rounds = False
             self._autoscramble_maps = False
             self.warning('Using default value (off) for auto scrambling mode')
+
+        re_valid_gamemode = re.compile(r"^[a-z]+\d$", re.IGNORECASE)
+        blacklist = []
+        try:
+            try:
+                blacklist_raw = self.config.get('scrambler', 'gamemodes_blacklist')
+                gamemodes_list = re.split('\W+', blacklist_raw)
+                invalid_gamemodes = []
+                for gamemode in gamemodes_list:
+                    if not re_valid_gamemode.match(gamemode):
+                        invalid_gamemodes.append(gamemode)
+                    else:
+                        blacklist.append(gamemode)
+                if len(invalid_gamemodes):
+                    self.warning(r"option 'srambler\gamemodes_blacklist' in your config file has invalid gamemode(s) : %s" % ', '.join(invalid_gamemodes))
+            except ConfigParser.NoOptionError:
+                self.warning(r"cannot find option 'srambler\gamemodes_blacklist' in your config file")
+
+        except Exception, err:
+            self.error(err)
+        self._autoscramble_gamemode_blacklist = blacklist
+        self.info('auto scrambler will ignore gamemodes : %s' % ', '.join(blacklist) if len(blacklist) else 'auto scrambler will not ignore any gamemodes')
+
 
     def _load_messages(self):
         """Loads the messages section from the plugin config file"""

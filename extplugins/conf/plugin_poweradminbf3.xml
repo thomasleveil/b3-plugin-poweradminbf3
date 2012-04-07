@@ -92,6 +92,21 @@
             When 'score', players will be scrambled based on players' score to try to even team skills
         -->
         <set name="strategy">random</set>
+        <!-- Gamemode backlist : define here a comma separated list of gamemodes for which the autoscrambler
+             won't ever run.
+             Refer to BF3 administration guide from DICE to get the exact gamemode identifiers.
+             As of BF3 Server R20 gamemodes are :
+                ConquestLarge0          Conquest64
+                ConquestSmall0          Conquest
+                ConquestAssaultLarge0   Conquest Assault64
+                ConquestAssaultSmall0   Conquest Assault
+                ConquestAssaultSmall1   Conquest Assault alt.2
+                RushLarge0              Rush
+                SquadRush0              Squad Rush
+                SquadDeathMatch0        Squad Deathmatch
+                TeamDeathMatch0         Team Deathmatch
+        -->
+        <set name="gamemodes_blacklist">SquadRush0,SquadDeathMatch0</set>
 	</settings>
 	<settings name="configmanager">
 		<!-- Configmanager setting enables you to load different server config files from 'configmanager' folder
