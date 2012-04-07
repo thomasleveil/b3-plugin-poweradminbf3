@@ -49,8 +49,8 @@
 # 0.19 - add commands !yell !yellplayer !yellteam !yellsquad (requires B3 1.8.1+)
 # 0.20 - add command !nuke
 # 1.0 - fixes !yell
-#
-__version__ = '1.0'
+# 1.1 - fixes !yell after B3 1.8.0 changes
+__version__ = '1.1'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -826,7 +826,7 @@ class Poweradminbf3Plugin(Plugin):
             if not data:
                 client.message('missing parameter, try !help yell')
             else:
-                self.console.write(self.console.getCommand('yell', message=data, yell_duration=self._yell_duration))
+                self.console.write(self.console.getCommand('yell', message=data, big_msg_duration=self._yell_duration))
 
     def cmd_yellteam(self, data, client, cmd=None):
         """\
@@ -835,7 +835,7 @@ class Poweradminbf3Plugin(Plugin):
         if not data:
             client.message('missing parameter, try !help yellteam')
         else:
-            self.console.write(self.console.getCommand('yellTeam', message=data, teamId=client.teamId, yell_duration=self._yell_duration))
+            self.console.write(self.console.getCommand('yellTeam', message=data, teamId=client.teamId, big_msg_duration=self._yell_duration))
 
     def cmd_yellsquad(self, data, client, cmd=None):
         """\
@@ -844,7 +844,7 @@ class Poweradminbf3Plugin(Plugin):
         if not data:
             client.message('missing parameter, try !help yellsquad')
         else:
-            self.console.write(self.console.getCommand('yellSquad', message=data, teamId=client.teamId, squadId=client.squad, yell_duration=self._yell_duration))
+            self.console.write(self.console.getCommand('yellSquad', message=data, teamId=client.teamId, squadId=client.squad, big_msg_duration=self._yell_duration))
 
     def cmd_yellplayer(self, data, client, cmd=None):
         """\
@@ -857,7 +857,7 @@ class Poweradminbf3Plugin(Plugin):
         cid, message = m
         sclient = self._adminPlugin.findClientPrompt(cid, client)
         if sclient:
-            self.console.write(self.console.getCommand('bigmessage', message=message, cid=sclient.cid, yell_duration=self._yell_duration))
+            self.console.write(self.console.getCommand('bigmessage', message=message, cid=sclient.cid, big_msg_duration=self._yell_duration))
 
 
     def cmd_nuke(self, data, client, cmd=None):

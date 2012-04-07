@@ -1,5 +1,9 @@
 # -*- encoding: utf-8 -*-
-import unittest
+import sys
+if sys.version_info[:2] < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 from mock import Mock # http://www.voidspace.org.uk/python/mock/mock.html
 from poweradminbf3 import Poweradminbf3Plugin
 

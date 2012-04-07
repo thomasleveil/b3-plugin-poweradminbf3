@@ -1,83 +1,191 @@
-# -*- encoding: utf-8 -*-
+import sys
+if sys.version_info[:2] < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
+import mock
+import logging
+from b3 import TEAM_UNKNOWN
+from b3.config import XmlConfigParser
+from b3.fake import FakeClient
+from b3.parsers.bf3 import Bf3Parser
+from b3.plugins.admin import AdminPlugin
 
-def prepare_fakeparser_for_tests():
-    import random
-    from b3 import TEAM_BLUE, TEAM_RED, TEAM_SPEC, TEAM_UNKNOWN
-    from b3.fake import fakeConsole, FakeConsole
-    from b3.fake import FakeClient
+
+class Expector(object):
+    def __init__(self):
+        self._return_value = mock.Mock()
+        self._return_exception = None
+
+    def thenReturn(self, obj):
+        self._return_value = obj
+
+    def thenRaise(self, exception):
+        self._return_exception = exception
 
 
-    def frostbitewrite(self, msg, maxRetries=1, needConfirmation=False):
-        """send text to the console"""
-        if type(msg) == str:
-            # console abuse to broadcast text
-            self.say(msg)
-        elif type(msg) == tuple:
+class Mockito(mock.Mock):
+
+    def __init__(self, *args, **kwargs):
+        super(Mockito, self).__init__(*args, **kwargs)
+        self._expected_calls = dict()
+
+
+    def expect(self, *args, **kwargs):
+        expector = Expector()
+        self._expected_calls[repr(mock.call(args, kwargs))] = (expector, mock._Call((args, kwargs), two=True))
+        return expector
+
+    def verify_expected_calls(self):
+        for expected_calls, call_args in self._expected_calls.values():
+            if call_args not in self.call_args_list:
+                raise AssertionError(
+                    '%s call not found' % repr(call_args)
+                )
+
+    def reset_mock(self):
+        self._expected_calls = dict()
+        super(Mockito, self).reset_mock()
+
+    def _mock_call(_mock_self, *args, **kwargs):
+        self = _mock_self
+        self.called = True
+        self.call_count += 1
+        self.call_args = mock._Call((args, kwargs), two=True)
+        self.call_args_list.append(mock._Call((args, kwargs), two=True))
+
+        _new_name = self._mock_new_name
+        _new_parent = self._mock_new_parent
+        self.mock_calls.append(mock._Call(('', args, kwargs)))
+
+        seen = set()
+        skip_next_dot = _new_name == '()'
+        do_method_calls = self._mock_parent is not None
+        name = self._mock_name
+        while _new_parent is not None:
+            this_mock_call = mock._Call((_new_name, args, kwargs))
+            if _new_parent._mock_new_name:
+                dot = '.'
+                if skip_next_dot:
+                    dot = ''
+
+                skip_next_dot = False
+                if _new_parent._mock_new_name == '()':
+                    skip_next_dot = True
+
+                _new_name = _new_parent._mock_new_name + dot + _new_name
+
+            if do_method_calls:
+                if _new_name == name:
+                    this_method_call = this_mock_call
+                else:
+                    this_method_call = mock._Call(name, args, kwargs)
+                _new_parent.method_calls.append(this_method_call)
+
+                do_method_calls = _new_parent._mock_parent is not None
+                if do_method_calls:
+                    name = _new_parent._mock_name + '.' + name
+
+            _new_parent.mock_calls.append(this_mock_call)
+            _new_parent = _new_parent._mock_new_parent
+
+            # use ids here so as not to call __hash__ on the mocks
+            _new_parent_id = id(_new_parent)
+            if _new_parent_id in seen:
+                break
+            seen.add(_new_parent_id)
+
+
+        if repr(mock.call(args, kwargs)) in self._expected_calls:
+            expector, call_args = self._expected_calls[repr(mock.call(args, kwargs))]
+            if expector._return_exception:
+                raise expector._return_exception
+            else:
+                return expector._return_value
+
+        ret_val = mock.DEFAULT
+        effect = self.side_effect
+        if effect is not None:
+            if mock._is_exception(effect):
+                raise effect
+
+            if not mock._callable(effect):
+                return next(effect)
+
+            ret_val = effect(*args, **kwargs)
+            if ret_val is mock.DEFAULT:
+                ret_val = self.return_value
+
+        if (self._mock_wraps is not None and
+            self._mock_return_value is mock.DEFAULT):
+            return self._mock_wraps(*args, **kwargs)
+        if ret_val is mock.DEFAULT:
+            ret_val = self.return_value
+        return ret_val
+
+
+class Bf3TestCase(unittest.TestCase):
+    """
+    Test case that is suitable for testing BF3 parser specific features
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        # less logging
+        logging.getLogger('output').setLevel(logging.ERROR)
+
+        from b3.parsers.frostbite2.abstractParser import AbstractParser
+        from b3.fake import FakeConsole
+        AbstractParser.__bases__ = (FakeConsole,)
+        # Now parser inheritance hierarchy is :
+        # Bf3Parser -> AbstractParser -> FakeConsole -> Parser
+
+        # add method changes_team(newTeam, newSquad=None) to FakeClient
+        def changes_team(self, newTeam, newSquad=None):
+            self.console.OnPlayerTeamchange(data=[self.cid, newTeam, newSquad if newSquad else self.squad], action=None)
+        FakeClient.changes_team = changes_team
+
+    def setUp(self):
+        # create a BF3 parser
+        self.parser_conf = XmlConfigParser()
+        self.parser_conf.loadFromString("""
+                    <configuration>
+                    </configuration>
+                """)
+        self.console = Bf3Parser(self.parser_conf)
+        self.console.startup()
+
+
+        # simulate game server actions
+        def frostbitewrite(msg, maxRetries=1, needConfirmation=False):
             print "   >>> %s" % repr(msg)
-            if len(msg) >= 4 and msg[0] == 'admin.movePlayer':
-                client = getClient(self, msg[1])
-                if client:
-                    client.teamId = int(msg[2])
-                    client.squad = int(msg[3])
+            if msg[0] == 'admin.movePlayer':
+                self.console.routeFrostbitePacket(['player.onTeamChange'] + list(msg[1:]))
+            else:
+                return mock.DEFAULT # will make Mockito fall back on return_value and wrapped function
+        self.console.write = Mockito(wraps=self.console.write, side_effect=frostbitewrite)
 
 
+        # load the admin plugin
+        self.adminPlugin = AdminPlugin(self.console, '@b3/conf/plugin_admin.xml')
+        self.adminPlugin.onStartup()
+
+        # make sure the admin plugin obtained by other plugins is our admin plugin
+        def getPlugin(name):
+            if name == 'admin':
+                return self.adminPlugin
+            else:
+                return self.console.getPlugin(name)
+        self.console.getPlugin = getPlugin
+
+        # prepare a few players
+        self.joe = FakeClient(self.console, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1, team=TEAM_UNKNOWN, teamId=0, squad=0)
+        self.simon = FakeClient(self.console, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", groupBits=0, team=TEAM_UNKNOWN, teamId=0, squad=0)
+        self.reg = FakeClient(self.console, name="Reg", exactName="Reg", guid="qsdfdsqfdsqf33", groupBits=4, team=TEAM_UNKNOWN, teamId=0, squad=0)
+        self.moderator = FakeClient(self.console, name="Moderator", exactName="Moderator", guid="sdf455ezr", groupBits=8, team=TEAM_UNKNOWN, teamId=0, squad=0)
+        self.admin = FakeClient(self.console, name="Level-40-Admin", exactName="Level-40-Admin", guid="875sasda", groupBits=16, team=TEAM_UNKNOWN, teamId=0, squad=0)
+        self.superadmin = FakeClient(self.console, name="God", exactName="God", guid="f4qfer654r", groupBits=128, team=TEAM_UNKNOWN, teamId=0, squad=0)
 
 
-    def authorizeClients():
-        pass
-
-
-    def getPlayerList(self=None, maxRetries=0):
-        players = {}
-        for c in fakeConsole.clients.getList():
-            players[c.cid] = {
-                'cid' : c.cid,
-                'name' : c.name,
-                'teamId': c.teamId
-                }
-        #print "getPlayerList : %s" % repr(players)
-        return players
-
-
-    def getPlayerScores(self=None, maxRetries=0):
-        scores = {}
-        for c in fakeConsole.clients.getList():
-            scores[c.cid] = random.randint(-20, 200)
-        print "getPlayerScores : %s" % repr(scores)
-        return scores
-
-
-    def getClient(self, cid, _guid=None):
-        return fakeConsole.clients.getByCID(cid)
-
-
-    def getTeam(team):
-        """convert Frostbite team numbers to B3 team numbers"""
-        team = int(team)
-        if team == 1:
-            return TEAM_RED
-        elif team == 2:
-            return TEAM_BLUE
-        elif team == 3:
-            return TEAM_SPEC
-        else:
-            return TEAM_UNKNOWN
-
-
-    def joinsTeam(self, teamId):
-        print "\n%s goes to team %s" % (self.name, teamId)
-        self.teamId = teamId
-        self.team = getTeam(teamId) # .team setter will send team change event
-        self.console.queueEvent(self.console.getEvent("EVT_CLIENT_TEAM_CHANGE", teamId, self))
-
-
-    fakeConsole.gameName = 'bf3'
-    fakeConsole.authorizeClients = authorizeClients
-    FakeConsole.write = frostbitewrite
-    FakeConsole.getPlayerList = getPlayerList
-    FakeConsole.getPlayerScores = getPlayerScores
-    FakeConsole.getClient = getClient
-    FakeClient.joinsTeam = joinsTeam
-    fakeConsole.Events.createEvent('EVT_GAME_ROUND_PLAYER_SCORES', 'round player scores')
-    fakeConsole.Events.createEvent('EVT_GAME_ROUND_TEAM_SCORES', 'round team scores')
-
+    def tearDown(self):
+        self.console.working = False

@@ -4,7 +4,7 @@ from mock import patch
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
-from tests.unittests import Bf3TestCase
+from tests import Bf3TestCase
 
 @patch.object(time, 'sleep')
 class Test_cmd_serverreboot(Bf3TestCase):

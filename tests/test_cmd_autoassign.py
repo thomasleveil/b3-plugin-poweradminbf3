@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-from tests.unittests import Bf3TestCase
+from tests import Bf3TestCase
 from b3.config import XmlConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 

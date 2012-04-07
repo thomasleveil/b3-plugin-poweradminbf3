@@ -4,7 +4,7 @@ import time
 from mock import patch
 from b3.config import XmlConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
-from tests.unittests import Bf3TestCase, Mockito
+from tests import Bf3TestCase, Mockito
 
 
 
