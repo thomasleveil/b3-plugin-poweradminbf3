@@ -135,7 +135,7 @@ Contrib
 -------
 
 - *features* can be discussed on the `B3 forums <http://forum.bigbrotherbot.net/bf3b3-beta-board/poweradmin-bf3/>`_
-- documented and reproductible *bugs* can be reported on the `issue tracker <https://github.com/courgette/b3-plugin-poweradminbf3/issues>`_
+- documented and reproducible *bugs* can be reported on the `issue tracker <https://github.com/courgette/b3-plugin-poweradminbf3/issues>`_
 - *patches* are welcome. Send me a `pull request <http://help.github.com/send-pull-requests/>`_. It is best if your patch provides tests.
 
 .. image:: https://secure.travis-ci.org/courgette/b3-plugin-poweradminbf3.png?branch=master
