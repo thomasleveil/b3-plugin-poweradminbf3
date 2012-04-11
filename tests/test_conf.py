@@ -142,7 +142,7 @@ class Test_load_scrambler__strategy(Test_conf):
                 </settings>
             </configuration>""")
         self.p._load_scrambler()
-        self.setSTragegy_mock.assert_has_calls([call(None), call('random')])
+        self.setSTragegy_mock.assert_has_calls([call(''), call('random')])
 
     def test_bad_option(self):
         self.conf.loadFromString("""<configuration plugin="poweradminbf3">
