@@ -79,6 +79,10 @@
         <set name="autobalance">On</set>
         <set name="autobalance_timer">120</set>
         <set name="team_swap_threshold">3</set>
+        <!-- If this is set to True then the number of players that teams are allowed to be unbalanced by goes up
+         by 1 at 20 players and by a further 1 at 40 players which will cut down on too many team swaps back and forth
+        -->
+		<set name="team_swap_threshold_prop">False</set>
 	</settings>
 
     <settings name="scrambler">
