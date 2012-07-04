@@ -1,7 +1,5 @@
 # -*- encoding: utf-8 -*-
 # http://www.voidspace.org.uk/python/mock/mock.html
-from mock import Mock
-import b3
 from b3.config import XmlConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
