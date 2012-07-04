@@ -39,7 +39,8 @@ Commands
   swap player A's team/squad with player B's team/squad
 
 !setnextmap <map partial name>
-  select the next map to load after current round
+  select the next map to load after current round. If the map is not in the current map rotation list, then it is added
+  with the current gamemode and current number of rounds.
 
 !punkbuster <punkbuster command>
   run a punkbuster command
@@ -128,13 +129,28 @@ Support
 -------
 
 Support is only provided on www.bigbrotherbot.net forums on the following topic :
-http://forum.bigbrotherbot.net/bf3b3-beta-board/poweradmin-bf3/
+http://forum.bigbrotherbot.net/plugins-by-courgette/poweradmin-bf3/
+
+
+Changelog
+---------
+
+1.0
+  first stable realease
+1.1
+  fixes !yell after B3 1.8.0 changes
+1.2
+  adds config option scramber\gamemodes_blacklist to have the auto scrambler ignoring some gamemodes. requires B3 1.8.2dev1+
+1.3
+  Refactors autobalance logic flow, and add setting option team_swap_threshold_prop
+1.3.1
+  Fixes issue with command !setnextmap since B3 1.8.2
 
 
 Contrib
 -------
 
-- *features* can be discussed on the `B3 forums <http://forum.bigbrotherbot.net/bf3b3-beta-board/poweradmin-bf3/>`_
+- *features* can be discussed on the `B3 forums <http://forum.bigbrotherbot.net/plugins-by-courgette/poweradmin-bf3/>`_
 - documented and reproducible *bugs* can be reported on the `issue tracker <https://github.com/courgette/b3-plugin-poweradminbf3/issues>`_
 - *patches* are welcome. Send me a `pull request <http://help.github.com/send-pull-requests/>`_. It is best if your patch provides tests.
 

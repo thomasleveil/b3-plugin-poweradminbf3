@@ -1,9 +1,7 @@
 # -*- encoding: utf-8 -*-
 # http://www.voidspace.org.uk/python/mock/mock.html
-from mock import Mock
-import b3
+import logging
 from b3.config import XmlConfigParser
-from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase, Mockito
 
@@ -23,6 +21,9 @@ class Test_cmd_setnextmap(Bf3TestCase):
         self.p.onLoadConfig()
         self.p.onStartup()
 
+        logging.getLogger('output').setLevel(logging.DEBUG)
+        self.console.game.gameType = 'currentGamemode'
+
 
     def test_no_argument(self):
         self.superadmin.connects('superadmin')
@@ -40,17 +41,57 @@ class Test_cmd_setnextmap(Bf3TestCase):
         self.console.getMapsSoundingLike.verify_expected_calls()
         self.assertEqual(['do you mean : map #1, map #2, map #3 ?'], self.superadmin.message_history)
 
+    def test_my_getMapsSoundingLike_finds_the_map(self):
+        self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
+        self.console.getMapsSoundingLike.expect('somemap').thenReturn('MAP_001')
+
+        self.console.write.expect(('mapList.list',)).thenReturn([5, 3,
+                                                                 'MAP_A', 'gamode_A', '1',
+                                                                 'MAP_B', 'gamemode_B', '1',
+                                                                 'MAP_001', 'gamemode1', '1',
+                                                                 'MAP_C', 'gamdemode_C', '1',
+                                                                 'MAP_D', 'gamemode_D', '1'])
+        self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
+        self.console.write.expect(('mapList.getMapIndices',)).thenReturn([0, 1])
+
+        self.superadmin.connects('superadmin')
+        self.superadmin.message_history = []
+        self.superadmin.says('!setnextmap somemap')
+        self.console.getMapsSoundingLike.verify_expected_calls()
+        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
 
     def test_empty_list(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn(['MAP_001'])
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
 
         self.console.write.expect(('mapList.list',)).thenReturn([0, 3])
         self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
 
-        self.console.write.expect(('mapList.load',))
-        self.console.write.expect(('mapList.add', 'MAP_001', None, 1, 0))
+        self.console.write.expect(('mapList.add', 'MAP_001', 'currentGamemode', 1, 0))
         self.console.write.expect(('mapList.setNextMapIndex', 0))
+
+        self.superadmin.connects('superadmin')
+        self.superadmin.message_history = []
+        self.superadmin.says('!snmap map1')
+        self.console.getMapsSoundingLike.verify_expected_calls()
+        self.console.write.verify_expected_calls()
+        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
+
+
+    def test_wanted_map_is_not_in_list(self):
+        self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
+
+        self.console.write.expect(('mapList.list',)).thenReturn([4, 3,
+                                                                 'MAP_A', 'gamode_A', '1',
+                                                                 'MAP_B', 'gamemode_B', '1',
+                                                                 'MAP_C', 'gamdemode_C', '1',
+                                                                 'MAP_D', 'gamemode_D', '1'])
+        self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
+        self.console.write.expect(('mapList.getMapIndices',)).thenReturn([4, 1])
+
+        self.console.write.expect(('mapList.add', 'MAP_001', 'currentGamemode', 1, 5))
+        self.console.write.expect(('mapList.setNextMapIndex', 5))
 
         self.superadmin.connects('superadmin')
         self.superadmin.message_history = []
@@ -62,7 +103,7 @@ class Test_cmd_setnextmap(Bf3TestCase):
 
     def test_wanted_map_is_in_list(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn(['MAP_001'])
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
 
         self.console.write.expect(('mapList.list',)).thenReturn([5, 3,
                                                                  'MAP_A', 'gamode_A', '1',
@@ -85,7 +126,7 @@ class Test_cmd_setnextmap(Bf3TestCase):
 
     def test_wanted_map_is_already_the_next_map(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn(['MAP_001'])
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
 
         self.console.write.expect(('mapList.list',)).thenReturn([5, 3,
                                                                  'MAP_A', 'gamode_A', '1',
@@ -108,7 +149,7 @@ class Test_cmd_setnextmap(Bf3TestCase):
 
     def test_wanted_map_is_in_the_list_multiple_times(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn(['MAP_001'])
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
 
         self.console.write.expect(('mapList.list',)).thenReturn([10, 3,
                                                                  'MAP_A', 'gamemode', '1',
@@ -137,7 +178,7 @@ class Test_cmd_setnextmap(Bf3TestCase):
 
     def test_wanted_map_is_in_the_list_multiple_times_2(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn(['MAP_001'])
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
 
         self.console.write.expect(('mapList.list',)).thenReturn([10, 3,
                                                                  'MAP_A', 'gamemode', '1',
@@ -166,7 +207,7 @@ class Test_cmd_setnextmap(Bf3TestCase):
 
     def test_wanted_map_is_in_the_list_multiple_times_3(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn(['MAP_001'])
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
 
         self.console.write.expect(('mapList.list',)).thenReturn([10, 3,
                                                                  'MAP_A', 'gamemode', '1',
