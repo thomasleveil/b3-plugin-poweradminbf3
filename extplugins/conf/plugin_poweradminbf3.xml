@@ -28,6 +28,11 @@
         <set name="idle">40</set>
         <set name="nuke">40</set>
 
+        <set name="vipadd-vip">40</set>
+        <set name="vipremove-viprm">40</set>
+        <set name="viplist">40</set>
+        <set name="vips">20</set>
+
         <set name="changeteam">20</set>
         <set name="swap">20</set>
         <set name="setnextmap-snmap">20</set>

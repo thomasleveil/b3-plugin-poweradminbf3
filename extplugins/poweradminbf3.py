@@ -53,8 +53,8 @@
 # 1.2 - add config option scramber\gamemodes_blacklist to have the auto scrambler ignoring some gamemodes. requires B3 1.8.2dev1+
 # 1.3 - Refactor autobalance logic flow, and add setting option team_swap_threshold_prop
 # 1.3.1 - Fixes issue with command !setnextmap since B3 1.8.2
-#
-__version__ = '1.3.1'
+# 1.4x - Adds !vip* commands
+__version__ = '1.4a1'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -914,6 +914,134 @@ class Poweradminbf3Plugin(Plugin):
                     kill(player, reason)
 
 
+    def cmd_viplist(self, data, client, cmd=None):
+        """\
+        [filter] - display all VIPs or VIP matched by the given filter
+        """
+        vips = self.getFullreservedSlotsList()
+        if not len(vips):
+            client.message("VIP list is empty")
+        else:
+
+            if data:
+                filter_txt = data.lower()
+                filtered_vips = filter(lambda x: filter_txt in x.lower(), vips)
+                if not len(filtered_vips):
+                    client.message("no VIP matching '%s' found over the %s existing VIPs" % (filter_txt, len(vips)))
+                    return
+                else:
+                    vips = filtered_vips
+
+            connected_players = [x.cid for x in self.console.clients.getList()]
+            connected_vips = []
+            other_vips = []
+            for x in vips:
+                if x in connected_players:
+                    connected_vips.append(x)
+                else:
+                    other_vips.append(x)
+            msg = ''
+            if len(connected_vips):
+                client.message("Connected VIPs: " + ', '.join(connected_vips))
+                msg = 'other '
+            msg += "VIPs: " + ', '.join(other_vips[:15])
+            if len(other_vips) > 15:
+                msg += ' and %s more...' % (len(other_vips) - 15)
+            if len(other_vips) > 0:
+                client.message(msg)
+
+
+    def cmd_vips(self, data, client, cmd=None):
+        """\
+        display all online VIPs
+        """
+        vips = self.getFullreservedSlotsList()
+        if not len(vips):
+            client.message("No VIP connected")
+        else:
+            from operator import attrgetter
+            connected_players = map(attrgetter('cid'), self.console.clients.getList())
+            connected_vips = [x for x in vips if x in connected_players]
+            if not len(connected_vips):
+                client.message("No VIP connected")
+            else:
+                client.message("Connected VIPs: " + ', '.join(connected_vips))
+
+
+    def cmd_vipadd(self, data, client, cmd=None):
+        """\
+        <player> - makes a player a VIP
+        """
+        if not data:
+            client.message("Usage: !vipadd <player>")
+        else:
+            rv = self.findClientSilent(data)
+            if rv is None:
+                # a player matching the name was not found online or by its B3 id
+                # assume data is the exact player name to be added in the VIP list
+                name = data
+            elif type(rv) is list:
+                # multiple players matches data
+                client.message(self.getMessage('players_matched', data, ', '.join(rv)))
+                return
+            else:
+                # we got a match
+                name = rv
+
+            try:
+                self.console.write(('reservedSlotsList.add', name))
+            except CommandFailedError, err:
+                client.message('Error: %s' % err.message)
+            else:
+                client.message('%s is now a VIP' % name)
+
+
+
+    def cmd_vipremove(self, data, client, cmd=None):
+        """\
+        <player> - remove VIP privileges to a player
+        """
+        if not data:
+            client.message("Usage: !vipremove <player>")
+        else:
+            rv = self.findClientSilent(data)
+            if rv is None:
+                # a player matching the name was not found online or by its B3 id
+                # assume the player may be in the VIP list
+                if data.lower() in [x.lower() for x in self.getFullreservedSlotsList()]:
+                    name = data
+                else:
+                    client.message("No VIP named '%s' found" % data)
+                    return
+            elif type(rv) is list:
+                client.message(self.getMessage('players_matched', data, ', '.join(rv)))
+                return
+            else:
+                # we got a match
+                name = rv
+
+            # try to identify the player to remove
+            clients = self.lookupClientByExactName(name)
+            if len(clients) == 1:
+                sclient = clients[0]
+                name = sclient.name
+                if sclient.id != client.id and sclient.maxLevel > client.maxLevel:
+                    if sclient.maxGroup:
+                        client.message(self.getMessage('operation_denied_level', {'name': sclient.name, 'group': sclient.maxGroup.name}))
+                    else:
+                        client.message(self.getMessage('operation_denied'))
+                    return
+            try:
+                self.console.write(('reservedSlotsList.remove', name))
+            except CommandFailedError, err:
+                if err.message[0] == 'PlayerNotInList':
+                    client.message("There is no VIP named '%s'" % name)
+                else:
+                    client.message('Error: %s' % err.message[0])
+            else:
+                client.message('VIP privileges removed for %s' % name)
+
+
 
 ################################################################################################################
 #
@@ -1540,3 +1668,50 @@ class Poweradminbf3Plugin(Plugin):
             scoretable['4'] = float(self.console.game.serverinfo['team4score'])
 
         return max(scoretable, key=scoretable.get)
+
+
+    def getFullreservedSlotsList(self):
+        """query the Frostbite2 game server and return a list containing all vip player names of the current
+         reserved slots list.
+        """
+        names = list()
+        offset = 0
+        tmp = self.console.write(('reservedSlotsList.list', offset))
+        tmp_num_values = len(tmp)
+        while tmp_num_values:
+            names.extend(tmp)
+            tmp = self.console.write(('reservedSlotsList.list', len(names)))
+            tmp_num_values = len(tmp)
+        # remove duplicates
+        seen = set()
+        seen_add = seen.add
+        return [ x for x in names if x not in seen and not seen_add(x)]
+
+
+    def findClientSilent(self, client_id):
+        matches = self.console.clients.getByMagic(client_id)
+        if matches:
+            if len(matches) > 1:
+                return [x.name for x in matches]
+            else:
+                return matches[0].name
+        else:
+            return None
+
+
+    def lookupClientByExactName(self, name):
+        try:
+            sclient = self.console.storage.getClientsMatching({ 'name' : name })
+            if not sclient:
+                return []
+            else:
+                clients = []
+                for c in sclient:
+                    c.clients = self.console.clients
+                    c.console = self.console
+                    c.exactName = c.name
+                    clients.append(c)
+                return clients
+        except Exception, err:
+            self.error(err)
+            return []

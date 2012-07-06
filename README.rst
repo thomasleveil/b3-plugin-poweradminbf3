@@ -96,6 +96,21 @@ Commands
 !nuke <all|us|ru>
   kill all players or players from a given team
 
+!viplist [filter]
+  display VIP names
+  If `filter` is provided then only display names matching that filter.
+  Will display first connected VIPs and then at most the 1st 15 VIP names from the list.
+
+!vips
+  display the currently connected VIPs
+
+!vipadd <player>
+  add `player` to the VIP list
+
+!vipremove <player>
+  remove `player` from the VIP list
+
+
 
 Other features
 --------------
@@ -145,6 +160,8 @@ Changelog
   Refactors autobalance logic flow, and add setting option team_swap_threshold_prop
 1.3.1
   Fixes issue with command !setnextmap since B3 1.8.2
+1.4d1
+  Adds commands !viplist, !vips, !vipadd, !vipremove
 
 
 Contrib
