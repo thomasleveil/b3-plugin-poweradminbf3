@@ -107,10 +107,21 @@ Commands
 
 !vipadd <player>
   add `player` to the VIP list
+  If the player you want to add is connected, then you don't have to enter its full name as a parameter.
 
 !vipremove <player>
   remove `player` from the VIP list
+  If the player you want to add is connected, then you don't have to enter its full name as a parameter.
+  Note that you won't be able to remove admins of higher level that you are.
 
+!vipclear
+  clear the VIP list
+
+!vipsave
+  write the VIP list to the disk
+
+!vipload
+  load the VIP list from the disk
 
 
 Other features
@@ -161,8 +172,8 @@ Changelog
   Refactors autobalance logic flow, and add setting option team_swap_threshold_prop
 1.3.1
   Fixes issue with command !setnextmap since B3 1.8.2
-1.4d1
-  Adds commands !viplist, !vips, !vipadd, !vipremove
+1.4
+  Adds commands !viplist, !vips, !vipadd, !vipremove, !vipclear, !vipload, !vipsave
 
 
 Contrib

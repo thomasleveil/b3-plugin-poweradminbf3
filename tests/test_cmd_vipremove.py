@@ -39,7 +39,6 @@ vipremove: 0
         self.console.write.expect(('reservedSlotsList.remove', u'Joe')).thenRaise(CommandFailedError(['f00']))
         self.superadmin.clearMessageHistory()
         self.superadmin.says("!vipremove joe")
-        self.console.write.verify_expected_calls()
         self.assertEqual(["Error: f00"], self.superadmin.message_history)
         self.console.write.verify_expected_calls()
 
@@ -50,7 +49,6 @@ vipremove: 0
         self.console.write.expect(('reservedSlotsList.remove', u'Joe')).thenRaise(CommandFailedError(['PlayerNotInList']))
         self.superadmin.clearMessageHistory()
         self.superadmin.says("!vipremove joe")
-        self.console.write.verify_expected_calls()
         self.assertEqual(["There is no VIP named 'Joe'"], self.superadmin.message_history)
         self.console.write.verify_expected_calls()
 
