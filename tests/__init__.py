@@ -1,4 +1,6 @@
 import sys
+import threading
+
 if sys.version_info[:2] < (2, 7):
     import unittest2 as unittest
 else:
@@ -153,6 +155,11 @@ class Bf3TestCase(unittest.TestCase):
                     </configuration>
                 """)
         self.console = Bf3Parser(self.parser_conf)
+
+        # alter a few settings to speed up the tests
+        self.console.sayqueue_get_timeout = 0
+        self.console._settings['message_delay'] = 0
+
         self.console.startup()
 
 
@@ -189,3 +196,6 @@ class Bf3TestCase(unittest.TestCase):
 
     def tearDown(self):
         self.console.working = False
+        self.console.wait_for_threads()
+        sys.stderr.write("\tactive threads count : %s " % threading.activeCount())
+        sys.stderr.write("%s\n" % threading.enumerate())
