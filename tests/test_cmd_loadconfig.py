@@ -2,7 +2,7 @@
 from mock import Mock, ANY
 import os
 from mock import patch
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
 
@@ -11,13 +11,9 @@ class Test_cmd_loadconfig(Bf3TestCase):
 
     def setUp(self):
         super(Test_cmd_loadconfig, self).setUp()
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-            <configuration plugin="poweradminbf3">
-                <settings name="commands">
-                    <set name="loadconfig">40</set>
-                </settings>
-            </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+loadconfig: 40
             """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()

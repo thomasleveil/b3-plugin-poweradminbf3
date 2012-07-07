@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
 
@@ -7,75 +7,57 @@ from tests import Bf3TestCase
 class Test_config(Bf3TestCase):
 
     def test_no_preference(self):
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-        </configuration>
-        """)
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[foo]""")
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.assertEqual(10, self.p._yell_duration)
 
     def test_yell_duration_int(self):
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences">
-                <set name="yell_duration">1</set>
-            </settings>
-        </configuration>
+[preferences]
+yell_duration: 1
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.assertEqual(1.0, self.p._yell_duration)
 
     def test_yell_duration_float(self):
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences">
-                <set name="yell_duration">1.3</set>
-            </settings>
-        </configuration>
+[preferences]
+yell_duration: 1.3
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.assertEqual(10, self.p._yell_duration)
 
     def test_yell_duration_too_low(self):
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences">
-                <set name="yell_duration">0.3</set>
-            </settings>
-        </configuration>
+[preferences]
+yell_duration: 0.3
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.assertEqual(10, self.p._yell_duration)
 
     def test_yell_duration_junk(self):
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences">
-                <set name="yell_duration">foo</set>
-            </settings>
-        </configuration>
+[preferences]
+yell_duration: foo
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.assertEqual(10, self.p._yell_duration)
 
     def test_yell_duration_empty(self):
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences">
-                <set name="yell_duration"></set>
-            </settings>
-        </configuration>
+[preferences]
+yell_duration:
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
@@ -87,16 +69,12 @@ class Test_cmd_yell(Bf3TestCase):
 
     def setUp(self):
         Bf3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="yell">20</set>
-            </settings>
-            <settings name="preferences">
-                <set name="yell_duration">2</set>
-            </settings>
-        </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+yell: 20
+
+[preferences]
+yell_duration: 2
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
@@ -121,16 +99,12 @@ class Test_cmd_yellteam(Bf3TestCase):
 
     def setUp(self):
         Bf3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="yellteam">20</set>
-            </settings>
-            <settings name="preferences">
-                <set name="yell_duration">2</set>
-            </settings>
-        </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+yellteam: 20
+
+[preferences]
+yell_duration: 2
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
@@ -156,16 +130,12 @@ class Test_cmd_yellsquad(Bf3TestCase):
 
     def setUp(self):
         Bf3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="yellsquad">20</set>
-            </settings>
-            <settings name="preferences">
-                <set name="yell_duration">2</set>
-            </settings>
-        </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+yellsquad: 20
+
+[preferences]
+yell_duration: 2
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
@@ -191,16 +161,12 @@ class Test_cmd_yellplayer(Bf3TestCase):
 
     def setUp(self):
         Bf3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="yellplayer">20</set>
-            </settings>
-            <settings name="preferences">
-                <set name="yell_duration">2</set>
-            </settings>
-        </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+yellplayer: 20
+
+[preferences]
+yell_duration: 2
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()

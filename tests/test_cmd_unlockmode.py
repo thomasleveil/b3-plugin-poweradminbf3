@@ -2,7 +2,7 @@
 # http://www.voidspace.org.uk/python/mock/mock.html
 from mock import Mock
 import b3
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
@@ -11,13 +11,9 @@ from tests import Bf3TestCase
 class Test_cmd_unlockmode(Bf3TestCase):
     def setUp(self):
         super(Test_cmd_unlockmode, self).setUp()
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="unlockmode">40</set>
-            </settings>
-        </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+unlockmode: 40
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()

@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 from mock import Mock
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
 
@@ -10,14 +10,11 @@ class Test_cmd_autoscramble(Bf3TestCase):
 
     def setUp(self):
         Bf3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="autoscramble">20</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+autoscramble: mod
+""")
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.p.onStartup()

@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 from mock import Mock, patch # http://www.voidspace.org.uk/python/mock/mock.html
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
 
@@ -10,14 +10,11 @@ class Test_cmd_autobalance(Bf3TestCase):
 
     def setUp(self):
         super(Test_cmd_autobalance, self).setUp()
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="autobalance">20</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+autobalance: mod
+""")
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.p.onStartup()

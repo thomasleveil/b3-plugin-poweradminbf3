@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 import os
 from mock import patch
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
 
@@ -10,16 +10,12 @@ class Test_cmd_listconfig(Bf3TestCase):
 
     def setUp(self):
         super(Test_cmd_listconfig, self).setUp()
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-            <configuration plugin="poweradminbf3">
-                <settings name="commands">
-                    <set name="listconfig">40</set>
-                </settings>
-                <settings name="preferences">
-                    <set name="config_path">%(script_dir)s</set>
-                </settings>
-            </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+listconfig: 40
+
+[preferences]
+config_path: %(script_dir)s
             """ % {'script_dir': os.path.abspath(
             os.path.join(os.path.dirname(__file__), '../extplugins/conf/serverconfigs'))})
         self.p = Poweradminbf3Plugin(self.console, self.conf)

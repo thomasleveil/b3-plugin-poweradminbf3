@@ -85,7 +85,7 @@ class Scrambler:
 
     def scrambleTeams(self):
         clients = self._getClients_method()
-        if len(clients)==0:
+        if not len(clients):
             return
         elif len(clients)<3:
             self.debug("Too few players to scramble")

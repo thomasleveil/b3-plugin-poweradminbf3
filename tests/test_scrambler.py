@@ -4,7 +4,7 @@ from mock import Mock, call
 from tests import Mockito
 
 from poweradminbf3 import Poweradminbf3Plugin, __file__ as poweradminbf3_file
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 
 from tests import Bf3TestCase
 
@@ -12,7 +12,7 @@ class Test_events(Bf3TestCase):
 
     def setUp(self):
         Bf3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         logger = logging.getLogger('output')
         logger.setLevel(logging.INFO)
@@ -25,13 +25,11 @@ class Test_events(Bf3TestCase):
 
     def _assert_scrambleTeams_has_calls_on_level_started(self, scramble_mode, gamemode_blacklist, next_gamemode, next_round_number, expected_calls):
         # Given
-        self.conf.loadFromString("""<configuration plugin="poweradminbf3">
-                <settings name="scrambler">
-                    <set name="mode">%s</set>
-                    <set name="strategy">random</set>
-                    <set name="gamemodes_blacklist">%s</set>
-                </settings>
-            </configuration>""" % (scramble_mode, '|'.join(gamemode_blacklist)))
+        self.conf.loadFromString("""
+[scrambler]
+mode: %s
+strategy: random
+gamemodes_blacklist: %s""" % (scramble_mode, '|'.join(gamemode_blacklist)))
         self.p.onLoadConfig()
         self.p.onStartup()
         self.console.getClient = Mockito(wraps=self.console.getClient)

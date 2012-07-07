@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 import b3
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
@@ -9,13 +9,10 @@ from tests import Bf3TestCase
 class Test_cmd_changeteam(Bf3TestCase):
     def setUp(self):
         super(Test_cmd_changeteam, self).setUp()
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="changeteam">20</set>
-            </settings>
-        </configuration>
+[commands]
+changeteam: mod
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
@@ -199,16 +196,12 @@ class Test_cmd_changeteam(Bf3TestCase):
 class Test_issue_14(Bf3TestCase):
     def setUp(self):
         super(Test_issue_14, self).setUp()
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-            <configuration plugin="poweradminbf3">
-                <settings name="commands">
-                    <set name="changeteam">0</set>
-                </settings>
-                <settings name="preferences">
-                    <set name="no_level_check_level">20</set>
-                </settings>
-            </configuration>
+[commands]
+changeteam: guest
+[preferences]
+no_level_check_level: 20
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()

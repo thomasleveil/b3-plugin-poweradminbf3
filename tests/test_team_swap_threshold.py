@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 from mock import Mock
 from tests import Bf3TestCase
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 
 
@@ -11,13 +11,10 @@ class Test_config(Bf3TestCase):
     minimum_value = 2
 
     def assert_config_value(self, expected, conf_value):
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-                    <configuration plugin="poweradminbf3">
-                        <settings name="preferences">
-                            <set name="team_swap_threshold">%s</set>
-                        </settings>
-                    </configuration>
+[preferences]
+team_swap_threshold: %s
                     """ % conf_value)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
@@ -25,8 +22,8 @@ class Test_config(Bf3TestCase):
 
 
     def test_default_value(self):
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""<configuration plugin="poweradminbf3"/>""")
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[foo]""")
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.assertEqual(self.default_value, self.p._team_swap_threshold)
@@ -52,15 +49,12 @@ class Test_autoassign(Bf3TestCase):
 
     def setUp(self):
         super(Test_autoassign, self).setUp()
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-            <configuration plugin="poweradminbf3">
-                <settings name="preferences">
-                    <set name="no_autoassign_level">20</set>
-                    <set name="autoassign">On</set>
-                    <set name="team_swap_threshold">2</set>
-                </settings>
-            </configuration>
+[preferences]
+no_autoassign_level: 20
+autoassign: On
+team_swap_threshold: 2
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()

@@ -150,10 +150,7 @@ class Bf3TestCase(unittest.TestCase):
     def setUp(self):
         # create a BF3 parser
         self.parser_conf = XmlConfigParser()
-        self.parser_conf.loadFromString("""
-                    <configuration>
-                    </configuration>
-                """)
+        self.parser_conf.loadFromString("""<configuration />""")
         self.console = Bf3Parser(self.parser_conf)
 
         # alter a few settings to speed up the tests

@@ -1,20 +1,17 @@
 # -*- encoding: utf-8 -*-
 from tests import Bf3TestCase
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 
 class Test_cmd_autoassign(Bf3TestCase):
 
     def setUp(self):
         super(Test_cmd_autoassign, self).setUp()
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="autoassign">20</set>
-            </settings>
-        </configuration>
-        """)
+[commands]
+autoassign: mod
+""")
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.p.onStartup()

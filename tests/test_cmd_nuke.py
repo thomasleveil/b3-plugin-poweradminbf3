@@ -1,20 +1,16 @@
 # -*- encoding: utf-8 -*-
 from mock import patch, call, Mock
 import time
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase, Mockito
 
 class Test_cmd_nuke(Bf3TestCase):
     def setUp(self):
         Bf3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="nuke">20</set>
-            </settings>
-        </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+nuke: 20
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()

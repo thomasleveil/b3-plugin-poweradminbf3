@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 # http://www.voidspace.org.uk/python/mock/mock.html
 import logging
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase, Mockito
 
@@ -9,13 +9,9 @@ from tests import Bf3TestCase, Mockito
 class Test_cmd_setnextmap(Bf3TestCase):
     def setUp(self):
         super(Test_cmd_setnextmap, self).setUp()
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="setnextmap-snmap">20</set>
-            </settings>
-        </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+setnextmap-snmap: 20
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()

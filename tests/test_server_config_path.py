@@ -3,7 +3,7 @@ import os
 from mock import Mock, patch # http://www.voidspace.org.uk/python/mock/
 
 from poweradminbf3 import Poweradminbf3Plugin, __file__ as poweradminbf3_file
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 
 from tests import Bf3TestCase
 
@@ -12,7 +12,7 @@ class Test_server_config_path(Bf3TestCase):
 
     def setUp(self):
         Bf3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
+        self.conf = CfgConfigParser()
         self.setExistingPaths([])
 
     def setExistingPaths(self, paths):
@@ -33,9 +33,8 @@ class Test_server_config_path(Bf3TestCase):
     def test_1(self):
         """nothing in config, no plugin config file, no b3 config file"""
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences"/>
-        </configuration>
+[preferences]
+
         """)
         # the plugin config does not exist on the filesystem
         p = Poweradminbf3Plugin(self.console, self.conf)
@@ -46,9 +45,8 @@ class Test_server_config_path(Bf3TestCase):
     def test_2(self):
         """nothing in config, no plugin config file, b3 config file"""
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences"/>
-        </configuration>
+[preferences]
+
         """)
         # the plugin config does not exist on the filesystem
 
@@ -66,11 +64,10 @@ class Test_server_config_path(Bf3TestCase):
     def test_2bis(self):
         """nothing in config, plugin config file, no b3 config file"""
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences"/>
-        </configuration>
+[preferences]
+
         """)
-        self.conf.fileName = "somewhere/on/the/filesystem/plugin_poweradminbf3.xml"
+        self.conf.fileName = "somewhere/on/the/filesystem/plugin_poweradminbf3.ini"
 
         p = Poweradminbf3Plugin(self.console, self.conf)
 
@@ -84,11 +81,8 @@ class Test_server_config_path(Bf3TestCase):
     def test_3(self):
         """junk in config, no plugin config file, no b3 config file"""
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences">
-                <set name="config_path">I don't exists</set>
-            </settings>
-        </configuration>
+[preferences]
+config_path: I don't exists
         """)
 
         p = Poweradminbf3Plugin(self.console, self.conf)
@@ -99,11 +93,8 @@ class Test_server_config_path(Bf3TestCase):
     def test_4(self):
         """absolute existing path in config file"""
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences">
-                <set name="config_path">/somewhere/on/the/filesystem/</set>
-            </settings>
-        </configuration>
+[preferences]
+config_path: /somewhere/on/the/filesystem/
         """)
         p = Poweradminbf3Plugin(self.console, self.conf)
 
@@ -117,11 +108,8 @@ class Test_server_config_path(Bf3TestCase):
     def test_5(self):
         """existing path in config file relative to b3 config directory"""
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences">
-                <set name="config_path">subdirectory</set>
-            </settings>
-        </configuration>
+[preferences]
+config_path: subdirectory
         """)
         p = Poweradminbf3Plugin(self.console, self.conf)
         # make B3 think it has a config file on the filesystem
@@ -136,13 +124,10 @@ class Test_server_config_path(Bf3TestCase):
     def test_6(self):
         """existing path in config file relative to plugin config directory"""
         self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="preferences">
-                <set name="config_path">subdirectory</set>
-            </settings>
-        </configuration>
+[preferences]
+config_path: subdirectory
         """)
-        self.conf.fileName = "somewhere/on/the/filesystem/plugin_poweradminbf3.xml"
+        self.conf.fileName = "somewhere/on/the/filesystem/plugin_poweradminbf3.ini"
 
         p = Poweradminbf3Plugin(self.console, self.conf)
 

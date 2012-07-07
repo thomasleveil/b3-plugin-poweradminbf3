@@ -15,9 +15,10 @@ Installation
 ------------
 
 - copy poweradminbf3.py into b3/extplugins
+- copy the files from the conf folder into the folder that contains your main b3.xml config file
 - add to the plugins section of your main b3 config file::
 
-  <plugin name="poweradminbf3" config="@b3/extplugins/conf/plugin_poweradminbf3.xml" />
+  <plugin name="poweradminbf3" config="@conf/plugin_poweradminbf3.ini" />
 
 
 Commands

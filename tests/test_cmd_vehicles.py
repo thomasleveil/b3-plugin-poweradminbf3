@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 from mock import Mock # http://www.voidspace.org.uk/python/mock/mock.html
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from b3.cvar import Cvar
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
@@ -11,13 +11,9 @@ class Test_cmd_vehicles(Bf3TestCase):
 
     def setUp(self):
         Bf3TestCase.setUp(self)
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="vehicles">20</set>
-            </settings>
-        </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+vehicles: 20
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()

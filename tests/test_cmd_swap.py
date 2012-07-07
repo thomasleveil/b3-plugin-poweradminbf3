@@ -2,7 +2,7 @@
 # http://www.voidspace.org.uk/python/mock/mock.html
 from mock import Mock
 import b3
-from b3.config import XmlConfigParser
+from b3.config import CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
@@ -12,13 +12,9 @@ class Test_cmd_swap(Bf3TestCase):
 
     def setUp(self):
         super(Test_cmd_swap, self).setUp()
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-        <configuration plugin="poweradminbf3">
-            <settings name="commands">
-                <set name="swap">20</set>
-            </settings>
-        </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+swap: 20
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
@@ -129,16 +125,12 @@ class Test_issue_14(Bf3TestCase):
 
     def setUp(self):
         super(Test_issue_14, self).setUp()
-        self.conf = XmlConfigParser()
-        self.conf.loadFromString("""
-            <configuration plugin="poweradminbf3">
-                <settings name="commands">
-                    <set name="swap">0</set>
-                </settings>
-                <settings name="preferences">
-                    <set name="no_level_check_level">20</set>
-                </settings>
-            </configuration>
+        self.conf = CfgConfigParser()
+        self.conf.loadFromString("""[commands]
+swap: 0
+
+[preferences]
+no_level_check_level: 20
         """)
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
