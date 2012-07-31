@@ -45,12 +45,13 @@ Commands
   swap player A's team/squad with player B's team/squad
 
 !setnextmap <map> [, <gamemode> [, <rounds>]]
-  | select the next map to load after current round. If the map is not in the current map rotation list, then it is added.
-  | When no gamemode or no rounds is specified, then uses the current values.
-  | Parameters MUST be separated by a comma ','.
-  | Usage example :
-  |  - `!setnextmap firestorm, conquest, 2`
-  |  - `!setnextmap bazaar, rush, 1`
+  select the next map to load after current round. If the map is not in the current map rotation list, then it is added.
+  When no gamemode or no rounds is specified, then uses the current values.
+  Parameters MUST be separated by a comma ','.
+
+  Usage example :
+   - `!setnextmap firestorm, conquest, 2`
+   - `!setnextmap bazaar, rush, 1`
 
 !punkbuster <punkbuster command>
   run a punkbuster command
