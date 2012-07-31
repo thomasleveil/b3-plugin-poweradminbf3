@@ -18,7 +18,8 @@ setnextmap-snmap: 20
         self.p.onStartup()
 
         logging.getLogger('output').setLevel(logging.DEBUG)
-        self.console.game.gameType = 'currentGamemode'
+        self.console.game.gameType = 'ConquestSmall0'
+        self.console.game.serverinfo = {'roundsTotal': 2}
 
 
     def test_no_argument(self):
@@ -39,14 +40,14 @@ setnextmap-snmap: 20
 
     def test_my_getMapsSoundingLike_finds_the_map(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('somemap').thenReturn('MAP_001')
+        self.console.getMapsSoundingLike.expect('somemap').thenReturn('MP_Subway')
 
         self.console.write.expect(('mapList.list',)).thenReturn([5, 3,
-                                                                 'MAP_A', 'gamode_A', '1',
-                                                                 'MAP_B', 'gamemode_B', '1',
-                                                                 'MAP_001', 'gamemode1', '1',
-                                                                 'MAP_C', 'gamdemode_C', '1',
-                                                                 'MAP_D', 'gamemode_D', '1'])
+                                                                 'MP_001', 'ConquestSmall0', '1',
+                                                                 'MP_003', 'RushLarge0', '1',
+                                                                 'MP_Subway', 'SquadRush0', '1',
+                                                                 'MP_007', 'SquadDeathMatch0', '1',
+                                                                 'MP_011', 'TeamDeathMatch0', '1'])
         self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
         self.console.write.expect(('mapList.getMapIndices',)).thenReturn([0, 1])
 
@@ -54,16 +55,16 @@ setnextmap-snmap: 20
         self.superadmin.message_history = []
         self.superadmin.says('!setnextmap somemap')
         self.console.getMapsSoundingLike.verify_expected_calls()
-        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
+        self.assertEqual(['next map set to Operation Metro (Conquest) 2 rounds'], self.superadmin.message_history)
+
 
     def test_empty_list(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MP_Subway')
 
         self.console.write.expect(('mapList.list',)).thenReturn([0, 3])
-        self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
 
-        self.console.write.expect(('mapList.add', 'MAP_001', 'currentGamemode', 1, 0))
+        self.console.write.expect(('mapList.add', 'MP_Subway', 'ConquestSmall0', 2, 0))
         self.console.write.expect(('mapList.setNextMapIndex', 0))
 
         self.superadmin.connects('superadmin')
@@ -71,22 +72,21 @@ setnextmap-snmap: 20
         self.superadmin.says('!snmap map1')
         self.console.getMapsSoundingLike.verify_expected_calls()
         self.console.write.verify_expected_calls()
-        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
+        self.assertEqual(['next map set to Operation Metro (Conquest) 2 rounds'], self.superadmin.message_history)
 
 
     def test_wanted_map_is_not_in_list(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MP_Subway')
 
         self.console.write.expect(('mapList.list',)).thenReturn([4, 3,
-                                                                 'MAP_A', 'gamode_A', '1',
-                                                                 'MAP_B', 'gamemode_B', '1',
-                                                                 'MAP_C', 'gamdemode_C', '1',
-                                                                 'MAP_D', 'gamemode_D', '1'])
-        self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
+                                                                 'MP_001', 'ConquestSmall0', '1',
+                                                                 'MP_003', 'RushLarge0', '1',
+                                                                 'MP_007', 'SquadDeathMatch0', '1',
+                                                                 'MP_011', 'TeamDeathMatch0', '1'])
         self.console.write.expect(('mapList.getMapIndices',)).thenReturn([4, 1])
 
-        self.console.write.expect(('mapList.add', 'MAP_001', 'currentGamemode', 1, 5))
+        self.console.write.expect(('mapList.add', 'MP_Subway', 'ConquestSmall0', 2, 5))
         self.console.write.expect(('mapList.setNextMapIndex', 5))
 
         self.superadmin.connects('superadmin')
@@ -94,138 +94,133 @@ setnextmap-snmap: 20
         self.superadmin.says('!snmap map1')
         self.console.getMapsSoundingLike.verify_expected_calls()
         self.console.write.verify_expected_calls()
-        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
+        self.assertEqual(['next map set to Operation Metro (Conquest) 2 rounds'], self.superadmin.message_history)
 
 
     def test_wanted_map_is_in_list(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MP_Subway')
 
         self.console.write.expect(('mapList.list',)).thenReturn([5, 3,
-                                                                 'MAP_A', 'gamode_A', '1',
-                                                                 'MAP_B', 'gamemode_B', '1',
-                                                                 'MAP_001', 'gamemode1', '1',
-                                                                 'MAP_C', 'gamdemode_C', '1',
-                                                                 'MAP_D', 'gamemode_D', '1'])
-        self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
+                                                                 'MP_001', 'ConquestSmall0', '1',
+                                                                 'MP_003', 'RushLarge0', '1',
+                                                                 'MP_Subway', 'SquadRush0', '1',
+                                                                 'MP_007', 'SquadDeathMatch0', '1',
+                                                                 'MP_011', 'TeamDeathMatch0', '1'])
         self.console.write.expect(('mapList.getMapIndices',)).thenReturn([0, 1])
 
         self.console.write.expect(('mapList.setNextMapIndex', 2))
 
         self.superadmin.connects('superadmin')
         self.superadmin.message_history = []
-        self.superadmin.says('!snmap map1')
+        self.superadmin.says('!snmap map1, SquadRush0, 1')
         self.console.getMapsSoundingLike.verify_expected_calls()
         self.console.write.verify_expected_calls()
-        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
+        self.assertEqual(['next map set to Operation Metro (Squad Rush) 1 round'], self.superadmin.message_history)
 
 
     def test_wanted_map_is_already_the_next_map(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MP_Subway')
 
         self.console.write.expect(('mapList.list',)).thenReturn([5, 3,
-                                                                 'MAP_A', 'gamode_A', '1',
-                                                                 'MAP_B', 'gamemode_B', '1',
-                                                                 'MAP_001', 'gamemode1', '1',
-                                                                 'MAP_C', 'gamdemode_C', '1',
-                                                                 'MAP_D', 'gamemode_D', '1'])
-        self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
+                                                                 'MP_001', 'ConquestSmall0', '1',
+                                                                 'MP_003', 'RushLarge0', '1',
+                                                                 'MP_Subway', 'SquadRush0', '1',
+                                                                 'MP_007', 'SquadDeathMatch0', '1',
+                                                                 'MP_011', 'TeamDeathMatch0', '1'])
         self.console.write.expect(('mapList.getMapIndices',)).thenReturn([0, 2])
 
         self.console.write.expect(('mapList.setNextMapIndex', 2))
 
         self.superadmin.connects('superadmin')
         self.superadmin.message_history = []
-        self.superadmin.says('!snmap map1')
+        self.superadmin.says('!snmap map1, SquadRush0, 1')
         self.console.getMapsSoundingLike.verify_expected_calls()
         self.console.write.verify_expected_calls()
-        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
+        self.assertEqual(['next map set to Operation Metro (Squad Rush) 1 round'], self.superadmin.message_history)
 
 
     def test_wanted_map_is_in_the_list_multiple_times(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MP_Subway')
 
         self.console.write.expect(('mapList.list',)).thenReturn([10, 3,
-                                                                 'MAP_A', 'gamemode', '1',
-                                                                 'MAP_B', 'gamemode', '1',
-                                                                 'MAP_001', 'gamemode', '1', #2
-                                                                 'MAP_C', 'gamemode', '1',
-                                                                 'MAP_D', 'gamemode', '1',
-                                                                 'MAP_E', 'gamemode', '1',
-                                                                 'MAP_001', 'gamemode', '1', #6
-                                                                 'MAP_F', 'gamemode', '1',
-                                                                 'MAP_G', 'gamemode', '1',
-                                                                 'MAP_H', 'gamemode', '1',
+                                                                 'MP_001', 'ConquestSmall0', '1',
+                                                                 'MP_003', 'ConquestSmall0', '1',
+                                                                 'MP_Subway', 'ConquestSmall0', '1', #2
+                                                                 'MP_007', 'ConquestSmall0', '1',
+                                                                 'MP_011', 'ConquestSmall0', '1',
+                                                                 'MP_012', 'ConquestSmall0', '1',
+                                                                 'MP_Subway', 'ConquestSmall0', '1', #6
+                                                                 'MP_013', 'ConquestSmall0', '1',
+                                                                 'MP_017', 'ConquestSmall0', '1',
+                                                                 'MP_018', 'ConquestSmall0', '1',
                                                                  ])
-        self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
         self.console.write.expect(('mapList.getMapIndices',)).thenReturn([0, 1])
 
         self.console.write.expect(('mapList.setNextMapIndex', 2))
 
         self.superadmin.connects('superadmin')
         self.superadmin.message_history = []
-        self.superadmin.says('!snmap map1')
+        self.superadmin.says('!snmap map1, ConquestSmall0, 1')
         self.console.getMapsSoundingLike.verify_expected_calls()
         self.console.write.verify_expected_calls()
-        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
+        self.assertEqual(['next map set to Operation Metro (Conquest) 1 round'], self.superadmin.message_history)
 
 
     def test_wanted_map_is_in_the_list_multiple_times_2(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MP_Subway')
 
         self.console.write.expect(('mapList.list',)).thenReturn([10, 3,
-                                                                 'MAP_A', 'gamemode', '1',
-                                                                 'MAP_B', 'gamemode', '1',
-                                                                 'MAP_001', 'gamemode', '1', #2
-                                                                 'MAP_C', 'gamemode', '1',
-                                                                 'MAP_D', 'gamemode', '1',
-                                                                 'MAP_E', 'gamemode', '1',
-                                                                 'MAP_001', 'gamemode', '1', #6
-                                                                 'MAP_F', 'gamemode', '1',
-                                                                 'MAP_G', 'gamemode', '1',
-                                                                 'MAP_H', 'gamemode', '1',
+                                                                 'MP_001', 'ConquestSmall0', '1',
+                                                                 'MP_003', 'ConquestSmall0', '1',
+                                                                 'MP_Subway', 'ConquestSmall0', '1', #2
+                                                                 'MP_007', 'ConquestSmall0', '1',
+                                                                 'MP_011', 'ConquestSmall0', '1',
+                                                                 'MP_012', 'ConquestSmall0', '1',
+                                                                 'MP_Subway', 'ConquestSmall0', '1', #6
+                                                                 'MP_013', 'ConquestSmall0', '1',
+                                                                 'MP_017', 'ConquestSmall0', '1',
+                                                                 'MP_018', 'ConquestSmall0', '1',
                                                                  ])
-        self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
         self.console.write.expect(('mapList.getMapIndices',)).thenReturn([2, 3])
 
         self.console.write.expect(('mapList.setNextMapIndex', 6))
 
         self.superadmin.connects('superadmin')
         self.superadmin.message_history = []
-        self.superadmin.says('!snmap map1')
+        self.superadmin.says('!snmap map1, ConquestSmall0, 1')
         self.console.getMapsSoundingLike.verify_expected_calls()
         self.console.write.verify_expected_calls()
-        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
+        self.assertEqual(['next map set to Operation Metro (Conquest) 1 round'], self.superadmin.message_history)
 
 
     def test_wanted_map_is_in_the_list_multiple_times_3(self):
         self.console.getMapsSoundingLike = Mockito(wraps=self.console.getMapsSoundingLike)
-        self.console.getMapsSoundingLike.expect('map1').thenReturn('MAP_001')
+        self.console.getMapsSoundingLike.expect('map1').thenReturn('MP_Subway')
 
         self.console.write.expect(('mapList.list',)).thenReturn([10, 3,
-                                                                 'MAP_A', 'gamemode', '1',
-                                                                 'MAP_B', 'gamemode', '1',
-                                                                 'MAP_001', 'gamemode', '1', #2
-                                                                 'MAP_C', 'gamemode', '1',
-                                                                 'MAP_D', 'gamemode', '1',
-                                                                 'MAP_E', 'gamemode', '1',
-                                                                 'MAP_001', 'gamemode', '1', #6
-                                                                 'MAP_F', 'gamemode', '1',
-                                                                 'MAP_G', 'gamemode', '1',
-                                                                 'MAP_H', 'gamemode', '1',
+                                                                 'MP_001', 'ConquestSmall0', '1',
+                                                                 'MP_003', 'ConquestSmall0', '1',
+                                                                 'MP_Subway', 'ConquestSmall0', '1', #2
+                                                                 'MP_007', 'ConquestSmall0', '1',
+                                                                 'MP_011', 'ConquestSmall0', '1',
+                                                                 'MP_012', 'ConquestSmall0', '1',
+                                                                 'MP_Subway', 'ConquestSmall0', '1', #6
+                                                                 'MP_013', 'ConquestSmall0', '1',
+                                                                 'MP_017', 'ConquestSmall0', '1',
+                                                                 'MP_018', 'ConquestSmall0', '1',
                                                                  ])
-        self.console.write.expect(('mapList.getRounds',)).thenReturn([0, 1])
         self.console.write.expect(('mapList.getMapIndices',)).thenReturn([6, 7])
 
         self.console.write.expect(('mapList.setNextMapIndex', 2))
 
         self.superadmin.connects('superadmin')
         self.superadmin.message_history = []
-        self.superadmin.says('!snmap map1')
+        self.superadmin.says('!snmap map1, conquest, 1')
         self.console.getMapsSoundingLike.verify_expected_calls()
         self.console.write.verify_expected_calls()
-        self.assertEqual(['next map set to MAP_001'], self.superadmin.message_history)
+        self.assertEqual(['next map set to Operation Metro (Conquest) 1 round'], self.superadmin.message_history)
 

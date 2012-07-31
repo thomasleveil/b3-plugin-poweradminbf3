@@ -54,7 +54,9 @@
 # 1.3 - Refactor autobalance logic flow, and add setting option team_swap_threshold_prop
 # 1.3.1 - Fixes issue with command !setnextmap since B3 1.8.2
 # 1.4 - Adds commands !viplist, !vips, !vipadd, !vipremove, !vipclear, !vipload, !vipsave
-__version__ = '1.4'
+# 1.5 - Command !setnextmap now accepts new optional parameters : <map> [, <gamemode> [, <rounds>]]
+#
+__version__ = '1.5'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -70,7 +72,8 @@ from b3.plugin import Plugin
 from ConfigParser import NoOptionError
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock, PlayerInfoBlock
-from b3.parsers.bf3 import GAME_MODES_NAMES
+from b3.parsers.bf3 import GAME_MODES_NAMES, __version__ as bf3_version
+from b3.update import B3version
 import b3.cron
 
 
@@ -329,7 +332,7 @@ class vip_commands_mixin:
         return [ x for x in names if x not in seen and not seen_add(x)]
 
 
-
+MIN_BF3_PARSER_VERSION = "1.4.1"
 
 class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
 
@@ -386,6 +389,10 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
         """\
         Initialize plugin settings
         """
+        if B3version(bf3_version) < B3version(MIN_BF3_PARSER_VERSION):
+            self.critical("The poweradminbf3 plugin requires B3 BF3 parser v%s+" % MIN_BF3_PARSER_VERSION)
+            raise SystemExit(220)
+
         # get the admin plugin so we can register commands
         self._adminPlugin = self.console.getPlugin('admin')
         if not self._adminPlugin:
@@ -690,46 +697,47 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
 
     def cmd_setnextmap(self, data, client=None, cmd=None):
         """\
-        <mapname> - Set the nextmap (partial map name works)
+        <map> [, gamemode [, num of rounds]] - Set the nextmap (partial map name works)
         """
         if not data:
             client.message('Invalid or missing data, try !help setnextmap')
+            return
+
+        parsed_data = self._adminPlugin.parse_map_parameters(data, client)
+        if not parsed_data:
+            return
+
+        map_id, gamemode_id, num_rounds = parsed_data
+
+        maplist = MapListBlock(self.console.write(('mapList.list',)))
+        if not len(maplist):
+            # maplist is empty, nextmap will be inserted at index 0
+            self.console.write(('mapList.add', map_id, gamemode_id, num_rounds, 0))
+            self.console.write(('mapList.setNextMapIndex', 0))
         else:
-            match = self.console.getMapsSoundingLike(data)
-            if not isinstance(match, basestring):
-                client.message('do you mean : %s ?' % ', '.join(match))
-                return
+            current_map_index = int(self.console.write(('mapList.getMapIndices', ))[0])
+            matching_maps = maplist.getByNameGamemodeAndRounds(map_id, gamemode_id, num_rounds)
+            if not len(matching_maps):
+                # then insert wanted map in rotation list
+                next_map_index = current_map_index + 1
+                self.console.write(('mapList.add', map_id, gamemode_id, num_rounds, next_map_index))
+                self.console.write(('mapList.setNextMapIndex', next_map_index))
+            elif len(matching_maps) == 1:
+                # easy case, just set the nextLevelIndex to the index found
+                self.console.write(('mapList.setNextMapIndex', matching_maps.keys()[0]))
             else:
-                map_id = match
-                maplist = MapListBlock(self.console.write(('mapList.list',)))
-                current_max_rounds = self.console.write(('mapList.getRounds',))[1]
-                if not len(maplist):
-                    # maplist is empty, nextmap will be inserted at index 0
-                    self.console.write(('mapList.add', map_id, self.console.game.gameType, current_max_rounds, 0))
-                    self.console.write(('mapList.setNextMapIndex', 0))
+                # multiple matches :s
+                matching_indices = matching_maps.keys()
+                # try to find the next indice after the index of the current map
+                indices_after_current = [x for x in matching_indices if x > current_map_index]
+                if len(indices_after_current):
+                    next_map_index = indices_after_current[0]
                 else:
-                    current_map_index = int(self.console.write(('mapList.getMapIndices', ))[0])
-                    matching_maps = maplist.getByName(map_id)
-                    if not len(matching_maps):
-                        # then insert wanted map in rotation list
-                        next_map_index = current_map_index + 1
-                        self.console.write(('mapList.add', map_id, self.console.game.gameType, current_max_rounds, next_map_index))
-                        self.console.write(('mapList.setNextMapIndex', next_map_index))
-                    elif len(matching_maps) == 1:
-                        # easy case, just set the nextLevelIndex to the index found
-                        self.console.write(('mapList.setNextMapIndex', matching_maps.keys()[0]))
-                    else:
-                        # multiple matches :s
-                        matching_indices = matching_maps.keys()
-                        # try to find the next indice after the index of the current map
-                        indices_after_current = [x for x in matching_indices if x > current_map_index]
-                        if len(indices_after_current):
-                            next_map_index = indices_after_current[0]
-                        else:
-                            next_map_index = matching_indices[0]
-                        self.console.write(('mapList.setNextMapIndex', next_map_index))
-                if client:
-                    cmd.sayLoudOrPM(client, 'next map set to %s' % self.console.getEasyName(map_id))
+                    next_map_index = matching_indices[0]
+                self.console.write(('mapList.setNextMapIndex', next_map_index))
+        if client:
+            map_info = '%s (%s) %s round%s' % (self.console.getEasyName(map_id), self.console.getGameMode(gamemode_id), num_rounds, 's' if num_rounds>1 else '')
+            cmd.sayLoudOrPM(client, 'next map set to %s' % map_info)
 
     def cmd_loadconfig(self, data, client=None, cmd=None):
         """\

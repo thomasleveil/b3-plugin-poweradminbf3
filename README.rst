@@ -10,6 +10,11 @@ Description
 This plugin brings Battlefield 3 specific features to Bigbrotherbot.
 
 
+Requirements
+------------
+
+- requires B3 v1.8.3 or later
+
 
 Installation
 ------------
@@ -39,9 +44,13 @@ Commands
 !swap <player A> [<player B>]
   swap player A's team/squad with player B's team/squad
 
-!setnextmap <map partial name>
-  select the next map to load after current round. If the map is not in the current map rotation list, then it is added
-  with the current gamemode and current number of rounds.
+!setnextmap <map> [, <gamemode> [, <rounds>]]
+  | select the next map to load after current round. If the map is not in the current map rotation list, then it is added.
+  | When no gamemode or no rounds is specified, then uses the current values.
+  | Parameters MUST be separated by a comma ','.
+  | Usage example :
+  |  - `!setnextmap firestorm, conquest, 2`
+  |  - `!setnextmap bazaar, rush, 1`
 
 !punkbuster <punkbuster command>
   run a punkbuster command
@@ -174,6 +183,9 @@ Changelog
   Fixes issue with command !setnextmap since B3 1.8.2
 1.4
   Adds commands !viplist, !vips, !vipadd, !vipremove, !vipclear, !vipload, !vipsave
+1.5
+  Command !setnextmap now accepts new optional parameters : <map> [, <gamemode> [, <rounds>]]
+
 
 
 Contrib

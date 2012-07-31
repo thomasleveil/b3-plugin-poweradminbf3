@@ -182,6 +182,8 @@ class Bf3TestCase(unittest.TestCase):
                 return self.console.getPlugin(name)
         self.console.getPlugin = getPlugin
 
+        self.console.patch_b3_admin_plugin()
+
         # prepare a few players
         self.joe = FakeClient(self.console, name="Joe", exactName="Joe", guid="zaerezarezar", groupBits=1, team=TEAM_UNKNOWN, teamId=0, squad=0)
         self.simon = FakeClient(self.console, name="Simon", exactName="Simon", guid="qsdfdsqfdsqf", groupBits=0, team=TEAM_UNKNOWN, teamId=0, squad=0)
