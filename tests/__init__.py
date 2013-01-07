@@ -7,10 +7,12 @@ else:
     import unittest
 import mock
 import logging
+from b3.update import B3version
+from poweradminbf3 import MIN_BF3_PARSER_VERSION
 from b3 import TEAM_UNKNOWN
 from b3.config import XmlConfigParser
 from b3.fake import FakeClient
-from b3.parsers.bf3 import Bf3Parser
+from b3.parsers.bf3 import Bf3Parser, __version__ as bf3_version
 from b3.plugins.admin import AdminPlugin
 
 
@@ -126,6 +128,8 @@ class Mockito(mock.Mock):
         return ret_val
 
 
+@unittest.skipIf(B3version(bf3_version) < B3version(MIN_BF3_PARSER_VERSION),
+                 "plugin requires B3 BF3 parser v%s or above (current is %s)" % (MIN_BF3_PARSER_VERSION, bf3_version))
 class Bf3TestCase(unittest.TestCase):
     """
     Test case that is suitable for testing BF3 parser specific features
