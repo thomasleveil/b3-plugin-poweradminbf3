@@ -41,12 +41,18 @@ kill: 0
 
 
     def test_superadmin_kills_joe(self):
+        # GIVEN
         self.joe.connects('Joe')
         self.superadmin.connects('superadmin')
         self.console.write.expect(('admin.killPlayer', 'Joe'))
-
+        self.joe.clearMessageHistory()
+        self.superadmin.clearMessageHistory()
+        # WHEN
         self.superadmin.says('!kill joe')
+        # THEN
         self.console.write.verify_expected_calls()
+        self.assertEqual([], self.superadmin.message_history)
+        self.assertEqual(['Killed by admin'], self.joe.message_history)
 
     def test_joe_kills_superadmin(self):
         self.joe.connects('Joe')
@@ -55,3 +61,17 @@ kill: 0
         self.joe.says('!kill God')
         self.assertEqual(['Operation denied because God is in the Super Admin group'], self.joe.message_history)
 
+
+    def test_superadmin_kills_simon(self):
+        # GIVEN
+        self.simon.connects('Simon')
+        self.superadmin.connects('superadmin')
+        self.console.write.expect(('admin.killPlayer', self.simon.name))
+        self.simon.clearMessageHistory()
+        self.superadmin.clearMessageHistory()
+        # WHEN
+        self.superadmin.says('!kill simon')
+        # THEN
+        self.console.write.verify_expected_calls()
+        self.assertEqual([], self.superadmin.message_history)
+        self.assertEqual(['Killed by admin'], self.simon.message_history)
