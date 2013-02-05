@@ -72,7 +72,7 @@ from b3.plugin import Plugin
 from ConfigParser import NoOptionError
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from b3.parsers.frostbite2.util import MapListBlock, PlayerInfoBlock
-from b3.parsers.bf3 import GAME_MODES_NAMES, __version__ as bf3_version
+from b3.parsers.bf3 import GAME_MODES_NAMES, __version__ as bf3_version, GUNMASTER_WEAPONS_PRESET_BY_INDEX, GUNMASTER_WEAPONS_PRESET_BY_NAME
 from b3.update import B3version
 import b3.cron
 
@@ -1104,6 +1104,35 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
                 for player in [x for x in players if x.teamId == 2]:
                     kill(player, reason)
 
+    def cmd_gunmaster(self, data, client, cmd=None):
+        """\
+        <index> - Set Weapon Preset for the next Gunmaster round
+        """
+        # generate human readable  preset list
+        _preset_list = []
+        for i in range(len(GUNMASTER_WEAPONS_PRESET_BY_INDEX)):
+            _preset_list.append( '%d - %s' % (i, GUNMASTER_WEAPONS_PRESET_BY_INDEX[i][0]))
+        # handle command args
+        if not data:
+            _current_preset = self.console.getCvar('gunMasterWeaponsPreset').getInt()
+            client.message('Current Gunmaster Preset: %s' % _preset_list[_current_preset])
+        else:
+            if data[0].isdigit():
+                if int(data[0]) in range(len(GUNMASTER_WEAPONS_PRESET_BY_INDEX)):
+                    _new_preset = int(data[0])
+                    try:
+                        self.console.setCvar('gunMasterWeaponsPreset', int(_new_preset))
+                        client.message('Set %s for the next Round.' % _preset_list[_new_preset])
+                    except CommandFailedError, err:
+                        pass
+                else:
+                    client.message('Weapon Preset %s doesn\'t exists' % data[0])
+            elif data == 'show':
+                client.message('Available Presets: %s' % ', '.join(_preset_list))
+            else:
+                client.message('wrong parameter, try !help gunmaster')
+
+
 
 
 ################################################################################################################
@@ -1672,7 +1701,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             (min, sec) = self.autobalance_time()
             self._cronTab_autobalance = b3.cron.OneTimeCronTab(self.run_autobalance, second=sec, minute=min)
             self.console.cron + self._cronTab_autobalance
-        
+
     def count_teams(self, clients):
         """
         Return the number of players in each team
