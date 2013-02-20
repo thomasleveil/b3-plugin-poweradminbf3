@@ -52,15 +52,17 @@ changeteam: mod
 
 
     def test_trying_to_changeteam_on_an_higher_level_player(self):
+        # GIVEN
+        self.console.getPlugin('admin')._warn_command_abusers = True
         self.joe.connects('Joe')
         self.superadmin.connects('superadmin')
         self.superadmin.teamId = 2
         self.superadmin.squad = 1
         self.assertLess(self.joe.maxLevel, self.superadmin.maxLevel)
         self.joe.message_history = []
-
+        # WHEN
         self.joe.says('!changeteam god')
-
+        # THEN
         self.assertEqual(2, self.superadmin.teamId)
         self.assertEqual(1, self.superadmin.squad)
         self.assertEqual(["You do not have sufficient access to use !changeteam"], self.joe.message_history)
