@@ -196,7 +196,7 @@ Contrib
 - documented and reproducible *bugs* can be reported on the `issue tracker <https://github.com/courgette/b3-plugin-poweradminbf3/issues>`_
 - *patches* are welcome. Send me a `pull request <http://help.github.com/send-pull-requests/>`_. It is best if your patch provides tests.
 
-.. image:: https://secure.travis-ci.org/courgette/b3-plugin-poweradminbf3.png?branch=master
+.. image:: https://secure.travis-ci.org/thomasleveil/b3-plugin-poweradminbf3.png?branch=master
    :alt: Build Status
-   :target: http://travis-ci.org/courgette/b3-plugin-poweradminbf3
+   :target: http://travis-ci.org/thomasleveil/b3-plugin-poweradminbf3
 
