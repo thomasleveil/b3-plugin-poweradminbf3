@@ -55,8 +55,9 @@
 # 1.3.1 - Fixes issue with command !setnextmap since B3 1.8.2
 # 1.4 - Adds commands !viplist, !vips, !vipadd, !vipremove, !vipclear, !vipload, !vipsave
 # 1.5 - Command !setnextmap now accepts new optional parameters : <map> [, <gamemode> [, <rounds>]]
+# 1.6 - add command !gunmaster
 #
-__version__ = '1.5'
+__version__ = '1.6'
 __author__  = 'Courgette, 82ndab-Bravo17, ozon, Mario'
 
 import re
@@ -332,7 +333,7 @@ class vip_commands_mixin:
         return [ x for x in names if x not in seen and not seen_add(x)]
 
 
-MIN_BF3_PARSER_VERSION = "1.4.1"
+MIN_BF3_PARSER_VERSION = "1.8"
 
 class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
 
