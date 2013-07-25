@@ -133,6 +133,9 @@ Commands
 !vipload
   load the VIP list from the disk
 
+!gunmaster <index>
+  set weapon preset for the next Gunmaster round
+
 
 Other features
 --------------
