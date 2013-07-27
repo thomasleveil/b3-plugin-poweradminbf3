@@ -1,4 +1,5 @@
 # -*- encoding: utf-8 -*-
+from mock import patch
 from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
@@ -90,8 +91,9 @@ yell_duration: 2
 
     def test_nominal(self):
         self.moderator.connects("moderator")
-        self.moderator.says("!yell changing map soon !")
-        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2'))
+        with patch.object(self.console, "write") as write_mock:
+            self.moderator.says("!yell changing map soon !")
+        write_mock.assert_called_once_with(('admin.yell', 'changing map soon !', '2'))
 
 
 
@@ -121,8 +123,9 @@ yell_duration: 2
     def test_nominal(self):
         self.moderator.connects("moderator")
         self.moderator.teamId = 3
-        self.moderator.says("!yellteam changing map soon !")
-        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2', 'team', '3'))
+        with patch.object(self.console, "write") as write_mock:
+            self.moderator.says("!yellteam changing map soon !")
+        write_mock.assert_called_once_with(('admin.yell', 'changing map soon !', '2', 'team', '3'))
 
 
 
@@ -153,8 +156,9 @@ yell_duration: 2
         self.moderator.connects("moderator")
         self.moderator.teamId = 3
         self.moderator.squad = 4
-        self.moderator.says("!yellsquad changing map soon !")
-        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2', 'squad', '3', '4'))
+        with patch.object(self.console, "write") as write_mock:
+            self.moderator.says("!yellsquad changing map soon !")
+        write_mock.assert_called_once_with(('admin.yell', 'changing map soon !', '2', 'squad', '3', '4'))
 
 
 class Test_cmd_yellplayer(Bf3TestCase):
@@ -183,6 +187,7 @@ yell_duration: 2
     def test_nominal(self):
         self.joe.connects('joe')
         self.moderator.connects("moderator")
-        self.moderator.says("!yellplayer joe changing map soon !")
-        self.console.write.assert_called_once_with(('admin.yell', 'changing map soon !', '2', 'player', 'joe'))
+        with patch.object(self.console, "write") as write_mock:
+            self.moderator.says("!yellplayer joe changing map soon !")
+        write_mock.assert_called_once_with(('admin.yell', 'changing map soon !', '2', 'player', 'joe'))
 

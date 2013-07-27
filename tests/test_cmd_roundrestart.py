@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 import time
 from mock import patch, call
+from mockito import verify, when
 from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
 from tests import Bf3TestCase
@@ -32,7 +33,8 @@ roundrestart: 20
 
 
     def test_nominal(self):
+        when(self.console).write()
         self.superadmin.clearMessageHistory()
         self.superadmin.says('!roundrestart')
         self.assertEqual([], self.superadmin.message_history)
-        self.console.write.assert_has_calls([call(('mapList.restartRound',))])
+        verify(self.console).write(('mapList.restartRound',))

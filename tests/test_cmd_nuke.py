@@ -3,7 +3,7 @@ from mock import patch, call, Mock
 import time
 from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
-from tests import Bf3TestCase, Mockito
+from tests import Bf3TestCase
 
 class Test_cmd_nuke(Bf3TestCase):
     def setUp(self):
@@ -19,6 +19,7 @@ nuke: 20
         self.sleep_patcher = patch.object(time, 'sleep')
         self.sleep_patcher.start()
 
+        self.console.write = Mock()
         self.console.say = Mock()
         self.console.saybig = Mock()
 

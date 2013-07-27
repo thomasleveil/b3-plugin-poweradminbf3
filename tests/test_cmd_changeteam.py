@@ -3,7 +3,9 @@ import b3
 from b3.config import CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
-from tests import Bf3TestCase
+from mock import call, patch, Mock
+from mockito import when, verify
+from tests import Bf3TestCase, logging_disabled
 
 
 class Test_cmd_changeteam(Bf3TestCase):
@@ -14,10 +16,24 @@ class Test_cmd_changeteam(Bf3TestCase):
 [commands]
 changeteam: mod
         """)
-        self.p = Poweradminbf3Plugin(self.console, self.conf)
-        self.p.onLoadConfig()
-        self.p.onStartup()
+        with logging_disabled():
+            self.p = Poweradminbf3Plugin(self.console, self.conf)
+            self.p.onLoadConfig()
+            self.p.onStartup()
 
+        def my_write(data):
+            if data[0] == 'admin.movePlayer':
+                self.console.routeFrostbitePacket(['player.onTeamChange', data[1], data[2], data[3]])
+                return ['OK']
+            else:
+                return Mock()
+
+        self.write_patcher = patch.object(self.console, "write", side_effect=my_write)
+        self.write_mock = self.write_patcher.start()
+
+    def tearDown(self):
+        Bf3TestCase.tearDown(self)
+        self.write_patcher.stop()
 
     def test_frostbite_error(self):
         self.joe.connects("joe")
@@ -26,7 +42,7 @@ changeteam: mod
         self.joe.squad = 1
 
         # simulate Frostbite error when moving a player
-        self.console.write.expect(('admin.movePlayer', 'joe', 2, 0, 'true')).thenRaise(
+        when(self.console).write(('admin.movePlayer', 'joe', 2, 0, 'true')).thenRaise(
             CommandFailedError(['SetTeamFailed']))
 
         self.superadmin.connects('superadmin')
@@ -68,130 +84,103 @@ changeteam: mod
         self.assertEqual(["You do not have sufficient access to use !changeteam"], self.joe.message_history)
 
 
+    def assert_moved_from_team_1_to_2_to_1(self):
+        self.console.getServerInfo()
+        self.joe.connects('Joe')
+        self.superadmin.connects('superadmin')
+
+        # GIVEN
+        self.superadmin.message_history = []
+        self.joe.teamId = 1
+        # WHEN
+        self.superadmin.says('!changeteam joe')
+        # THEN
+        verify(self.console).write(('admin.movePlayer', self.joe.cid, 2, 0, 'true'))
+        self.assertEqual(['Joe forced from team 1 to team 2'], self.superadmin.message_history)
+
+        # GIVEN
+        self.superadmin.message_history = []
+        self.joe.teamId = 2
+        # WHEN
+        self.superadmin.says('!changeteam joe')
+        # THEN
+        verify(self.console).write(('admin.movePlayer', self.joe.cid, 1, 0, 'true'))
+        self.assertEqual(['Joe forced from team 2 to team 1'], self.superadmin.message_history)
+
     def test_ConquestLarge0(self):
-        self.console.write.expect(('serverInfo',)).thenReturn(
+        # GIVEN
+        when(self.console).write(('serverInfo',)).thenReturn(
             ['i3D.net - BigBrotherBot #3 (DE)', '0', '16', 'ConquestLarge0', 'MP_007', '0', '2',
              '2', '300', '300', '0', '', 'false', 'true', 'false', '197758', '197735', '', '', '', 'EU', 'AMS', 'DE'])
-        self.console.getServerInfo()
-
-        self.joe.connects('Joe')
-        self.joe.teamId = 1
-        self.superadmin.connects('superadmin')
-        self.superadmin.message_history = []
-
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(2, self.joe.teamId)
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(1, self.joe.teamId)
-
-        self.assertEqual(['Joe forced from team 1 to team 2', 'Joe forced from team 2 to team 1'],
-            self.superadmin.message_history)
-
+        self.assert_moved_from_team_1_to_2_to_1()
 
     def test_ConquestSmall0(self):
-        self.console.write.expect(('serverInfo',)).thenReturn(
+        when(self.console).write(('serverInfo',)).thenReturn(
             ['i3D.net - BigBrotherBot #3 (DE)', '0', '16', 'ConquestSmall0', 'MP_001', '1', '2',
              '2', '250', '250', '0', '', 'false', 'true', 'false', '197774', '1', '', '', '', 'EU', 'AMS', 'DE'])
-        self.console.getServerInfo()
-
-        self.joe.connects('Joe')
-        self.joe.teamId = 1
-        self.superadmin.connects('superadmin')
-        self.superadmin.message_history = []
-
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(2, self.joe.teamId)
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(1, self.joe.teamId)
-
-        self.assertEqual(['Joe forced from team 1 to team 2', 'Joe forced from team 2 to team 1'],
-            self.superadmin.message_history)
-
+        self.assert_moved_from_team_1_to_2_to_1()
 
     def test_RushLarge0(self):
         # set the BF3 server
         # despite showing 0 teams in the serverInfo response, this gamemode has 2 teams (id 1 and 2)
-        self.console.write.expect(('serverInfo',)).thenReturn(
+        when(self.console).write(('serverInfo',)).thenReturn(
             ['i3D.net - BigBrotherBot #3 (DE)', '0', '16', 'RushLarge0', 'MP_001', '0', '2',
              '0', '0', '', 'false', 'true', 'false', '197817', '2', '', '', '', 'EU', 'AMS', 'DE'])
-        self.console.getServerInfo()
-
-        self.joe.connects('Joe')
-        self.joe.teamId = 1
-        self.superadmin.connects('superadmin')
-        self.superadmin.message_history = []
-
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(2, self.joe.teamId)
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(1, self.joe.teamId)
-
-        self.assertEqual(['Joe forced from team 1 to team 2', 'Joe forced from team 2 to team 1'],
-            self.superadmin.message_history)
-
+        self.assert_moved_from_team_1_to_2_to_1()
 
     def test_SquadRush0(self):
         # despite showing 0 teams in the serverInfo response, this gamemode has 2 teams (id 1:attackers and 2:defenders)
-        self.console.write.expect(('serverInfo',)).thenReturn(
+        when(self.console).write(('serverInfo',)).thenReturn(
             ['i3D.net - BigBrotherBot #3 (DE)', '0', '8', 'SquadRush0', 'MP_001', '1', '2',
              '0', '0', '', 'false', 'true', 'false', '197928', '0', '', '', '', 'EU', 'AMS', 'DE'])
-        self.console.getServerInfo()
+        self.assert_moved_from_team_1_to_2_to_1()
 
-        self.joe.connects('Joe')
-        self.joe.teamId = 1
-        self.superadmin.connects('superadmin')
-        self.superadmin.message_history = []
-
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(2, self.joe.teamId)
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(1, self.joe.teamId)
-
-        self.assertEqual(['Joe forced from team 1 to team 2', 'Joe forced from team 2 to team 1'],
-            self.superadmin.message_history)
-
+    def test_TeamDeathMatch0(self):
+        when(self.console).write(('serverInfo',)).thenReturn(
+            ['i3D.net - BigBrotherBot #3 (DE)', '0', '16', 'TeamDeathMatch0', 'MP_001', '1', '2',
+             '2', '0', '0', '100', '', 'false', 'true', 'false', '198148', '0', '', '', '', 'EU', 'AMS', 'DE'])
+        self.assert_moved_from_team_1_to_2_to_1()
 
     def test_SquadDeathMatch0(self):
-        self.console.write.expect(('serverInfo',)).thenReturn(
+        when(self.console).write(('serverInfo',)).thenReturn(
             ['i3D.net - BigBrotherBot #3 (DE)', '0', '16', 'SquadDeathMatch0', 'MP_001', '0', '2',
              '4', '0', '0', '0', '0', '50', '', 'false', 'true', 'false', '198108', '0', '', '', '', 'EU', 'AMS', 'DE'])
         self.console.getServerInfo()
         self.joe.connects('Joe')
-        self.joe.teamId = 1
         self.superadmin.connects('superadmin')
         self.superadmin.message_history = []
 
+        # GIVEN
+        self.joe.teamId = 1
+        # WHEN
         self.superadmin.says('!changeteam joe')
-        self.assertEqual(2, self.joe.teamId)
+        # THEN
+        verify(self.console).write(('admin.movePlayer', self.joe.cid, 2, 0, 'true'))
+        self.assertEqual(['Joe forced from team 1 to team 2'], self.superadmin.message_history)
+
+        # GIVEN
+        self.joe.teamId = 2
+        # WHEN
         self.superadmin.says('!changeteam joe')
-        self.assertEqual(3, self.joe.teamId)
+        # THEN
+        verify(self.console).write(('admin.movePlayer', self.joe.cid, 3, 0, 'true'))
+
+        # GIVEN
+        self.joe.teamId = 3
+        # WHEN
         self.superadmin.says('!changeteam joe')
-        self.assertEqual(4, self.joe.teamId)
+        # THEN
+        verify(self.console).write(('admin.movePlayer', self.joe.cid, 4, 0, 'true'))
+
+        # GIVEN
+        self.joe.teamId = 4
+        # WHEN
         self.superadmin.says('!changeteam joe')
-        self.assertEqual(1, self.joe.teamId)
+        # THEN
+        verify(self.console).write(('admin.movePlayer', self.joe.cid, 1, 0, 'true'))
 
         self.assertEqual(['Joe forced from team 1 to team 2', 'Joe forced from team 2 to team 3',
                           'Joe forced from team 3 to team 4', 'Joe forced from team 4 to team 1'],
-            self.superadmin.message_history)
-
-
-    def test_TeamDeathMatch0(self):
-        self.console.write.expect(('serverInfo',)).thenReturn(
-            ['i3D.net - BigBrotherBot #3 (DE)', '0', '16', 'TeamDeathMatch0', 'MP_001', '1', '2',
-             '2', '0', '0', '100', '', 'false', 'true', 'false', '198148', '0', '', '', '', 'EU', 'AMS', 'DE'])
-        self.console.getServerInfo()
-
-        self.joe.connects('Joe')
-        self.joe.teamId = 1
-        self.superadmin.connects('superadmin')
-        self.superadmin.message_history = []
-
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(2, self.joe.teamId)
-        self.superadmin.says('!changeteam joe')
-        self.assertEqual(1, self.joe.teamId)
-
-        self.assertEqual(['Joe forced from team 1 to team 2', 'Joe forced from team 2 to team 1'],
             self.superadmin.message_history)
 
 
@@ -219,9 +208,9 @@ no_level_check_level: 20
         self.moderator.connects('moderator')
         self.moderator.teamId = 2
 
-        self.console.write.expect(('admin.movePlayer', 'God', 1, 0, 'true'))
-        self.moderator.says("!changeteam God")
-        self.console.write.verify_expected_calls()
+        with patch.object(self.console, 'write') as write_mock:
+            self.moderator.says("!changeteam God")
+        self.assertListEqual([call(('admin.movePlayer', 'God', 1, 0, 'true'))], write_mock.mock_calls)
 
 
     def test_below__no_level_check_level(self):

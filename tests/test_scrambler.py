@@ -1,21 +1,21 @@
 # -*- encoding: utf-8 -*-
 import logging
 from mock import Mock, call
-from tests import Mockito
+from mockito import when
 
 from poweradminbf3 import Poweradminbf3Plugin, __file__ as poweradminbf3_file
 from b3.config import CfgConfigParser
+from tests import Bf3TestCase, logging_disabled
 
-from tests import Bf3TestCase
 
 class Test_events(Bf3TestCase):
 
     def setUp(self):
         Bf3TestCase.setUp(self)
         self.conf = CfgConfigParser()
-        self.p = Poweradminbf3Plugin(self.console, self.conf)
-        logger = logging.getLogger('output')
-        logger.setLevel(logging.INFO)
+        with logging_disabled():
+            self.p = Poweradminbf3Plugin(self.console, self.conf)
+        when(self.console).write(('vars.roundStartPlayerCount',)).thenReturn(['0'])
         self.scrambleTeams_mock = self.p._scrambler.scrambleTeams = Mock(name="scrambleTeams", wraps=self.p._scrambler.scrambleTeams)
         self.scrambleTeams_mock.reset_mock()
 
@@ -30,9 +30,9 @@ class Test_events(Bf3TestCase):
 mode: %s
 strategy: random
 gamemodes_blacklist: %s""" % (scramble_mode, '|'.join(gamemode_blacklist)))
-        self.p.onLoadConfig()
-        self.p.onStartup()
-        self.console.getClient = Mockito(wraps=self.console.getClient)
+        with logging_disabled():
+            self.p.onLoadConfig()
+            self.p.onStartup()
 
         # Make sure context is
         self.assertEqual(gamemode_blacklist, self.p._autoscramble_gamemode_blacklist)
@@ -50,11 +50,11 @@ gamemodes_blacklist: %s""" % (scramble_mode, '|'.join(gamemode_blacklist)))
 
         # When
         self.joe.connects('joe')
-        self.console.write.expect(('serverInfo',)).thenReturn([ 'i3D.net - BigBrotherBot #3 (DE)', '1', '16',
+        when(self.console).write(('serverInfo',)).thenReturn([ 'i3D.net - BigBrotherBot #3 (DE)', '1', '16',
                                                                 next_gamemode, 'MP_007', str(next_round_number), '2', '4', '0', '0', '0', '0', '50', '', 'false', 'true',
                                                                 'false', '790596', '1484', '', '', '', 'EU', 'AMS', 'DE', 'false'])
         self.console.routeFrostbitePacket(['server.onLevelLoaded', 'MP_007', next_gamemode, str(next_round_number), '2'])
-        self.console.getClient.expect('joe').thenReturn(self.joe)
+        when(self.console).getClient('joe').thenReturn(self.joe)
         self.console.routeFrostbitePacket(['player.onSpawn', 'joe', '1'])
 
         # Then

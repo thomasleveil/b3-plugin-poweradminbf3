@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 # http://www.voidspace.org.uk/python/mock/mock.html
 from mock import Mock
+from mockito import verify, when
 import b3
 from b3.config import CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
@@ -45,7 +46,7 @@ swap: 20
 
 
     def test_superadmin_swap_joe(self):
-
+        when(self.console).write()
         self.joe.connects('Joe')
         self.joe.teamId = 1
         self.joe.squad = 7
@@ -56,10 +57,8 @@ swap: 20
 
         self.superadmin.message_history = []
         self.superadmin.says('!swap joe')
-        self.assertEqual(1, self.superadmin.teamId)
-        self.assertEqual(7, self.superadmin.squad)
-        self.assertEqual(2, self.joe.teamId)
-        self.assertEqual(6, self.joe.squad)
+        verify(self.console).write(('admin.movePlayer', self.joe.cid, self.superadmin.teamId, self.superadmin.squad, 'true'))
+        verify(self.console).write(('admin.movePlayer', self.superadmin.cid, self.joe.teamId, self.joe.squad, 'true'))
 
 
     def test_superadmin_swap_joe_from_same_squad(self):
@@ -75,10 +74,6 @@ swap: 20
         self.superadmin.message_history = []
         self.superadmin.says('!swap joe')
         self.assertEqual(['both players are in the same team and squad. Cannot swap'], self.superadmin.message_history)
-        self.assertEqual(2, self.superadmin.teamId)
-        self.assertEqual(6, self.superadmin.squad)
-        self.assertEqual(2, self.joe.teamId)
-        self.assertEqual(6, self.joe.squad)
 
 
     def test_superadmin_swap_players_from_same_team_and_squad(self):
@@ -95,13 +90,10 @@ swap: 20
         self.superadmin.says("!swap joe simon")
 
         self.assertEqual(['both players are in the same team and squad. Cannot swap'], self.superadmin.message_history)
-        self.assertEqual(1, self.simon.teamId)
-        self.assertEqual(6, self.simon.squad)
-        self.assertEqual(1, self.joe.teamId)
-        self.assertEqual(6, self.joe.squad)
 
 
     def test_superadmin_swap_players_from_same_team_and_but_different_squads(self):
+        when(self.console).write()
         self.joe.connects('joe')
         self.joe.teamId = 1
         self.joe.squad = 6
@@ -114,10 +106,8 @@ swap: 20
         self.superadmin.message_history = []
         self.superadmin.says("!swap joe simon")
 
-        self.assertEqual(1, self.simon.teamId)
-        self.assertEqual(6, self.simon.squad)
-        self.assertEqual(1, self.joe.teamId)
-        self.assertEqual(2, self.joe.squad)
+        verify(self.console).write(('admin.movePlayer', self.joe.cid, self.simon.teamId, self.simon.squad, 'true'))
+        verify(self.console).write(('admin.movePlayer', self.simon.cid, self.joe.teamId, self.joe.squad, 'true'))
         self.assertEqual(['swapped player joe with simon'], self.superadmin.message_history)
 
 
@@ -139,6 +129,7 @@ no_level_check_level: 20
 
     def test_above__no_level_check_level(self):
 
+        when(self.console).write()
         assert self.p.no_level_check_level == 20
 
         self.superadmin.connects('God')
@@ -149,9 +140,8 @@ no_level_check_level: 20
         self.moderator.teamId = 2
         self.moderator.squad = 5
 
-        self.console.write.expect(('admin.movePlayer', 'God', 2, 5, 'true'))
         self.moderator.says("!swap God")
-        self.console.write.verify_expected_calls()
+        verify(self.console).write(('admin.movePlayer', 'God', 2, 5, 'true'))
 
     def test_below__no_level_check_level(self):
 

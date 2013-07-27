@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 # http://www.voidspace.org.uk/python/mock/mock.html
+from mockito import when, verify
 from b3.config import CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
@@ -34,19 +35,18 @@ vipadd: 0
     def test_frostbite_error(self):
         self.joe.connects("joe")
         self.superadmin.connects('superadmin')
-        self.console.write.expect(('reservedSlotsList.add', 'Joe')).thenRaise(CommandFailedError(['f00']))
+        when(self.console).write(('reservedSlotsList.add', 'Joe')).thenRaise(CommandFailedError(['f00']))
         self.superadmin.clearMessageHistory()
         self.superadmin.says("!vipadd joe")
-        self.console.write.verify_expected_calls()
         self.assertEqual(["Error: ['f00']"], self.superadmin.message_history)
 
 
     def test_nominal(self):
+        when(self.console).write()
         self.joe.connects('Joe')
         self.superadmin.connects('superadmin')
         self.superadmin.clearMessageHistory()
-        self.console.write.expect(('reservedSlotsList.add', 'Joe'))
         self.superadmin.says('!vipadd joe')
         self.assertEqual(['Joe is now a VIP'], self.superadmin.message_history)
-        self.console.write.verify_expected_calls()
+        verify(self.console).write(('reservedSlotsList.add', 'Joe'))
 

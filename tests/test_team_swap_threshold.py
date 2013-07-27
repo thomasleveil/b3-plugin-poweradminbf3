@@ -1,9 +1,8 @@
 # -*- encoding: utf-8 -*-
-from mock import Mock
-from tests import Bf3TestCase
+from mock import Mock, patch
+from tests import Bf3TestCase, logging_disabled
 from b3.config import CfgConfigParser
 from poweradminbf3 import Poweradminbf3Plugin
-
 
 
 class Test_config(Bf3TestCase):
@@ -19,7 +18,6 @@ team_swap_threshold: %s
         self.p = Poweradminbf3Plugin(self.console, self.conf)
         self.p.onLoadConfig()
         self.assertEqual(expected, self.p._team_swap_threshold)
-
 
     def test_default_value(self):
         self.conf = CfgConfigParser()
@@ -56,12 +54,26 @@ no_autoassign_level: 20
 autoassign: On
 team_swap_threshold: 2
         """)
-        self.p = Poweradminbf3Plugin(self.console, self.conf)
-        self.p.onLoadConfig()
-        self.p.onStartup()
+        with logging_disabled():
+            self.p = Poweradminbf3Plugin(self.console, self.conf)
+            self.p.onLoadConfig()
+            self.p.onStartup()
         self.assertTrue(self.p._autoassign)
         self.assertEqual(20, self.p._no_autoassign_level)
 
+        def my_write(data):
+            if data[0] == 'admin.movePlayer':
+                self.console.routeFrostbitePacket(['player.onTeamChange', data[1], data[2], data[3]])
+                return ['OK']
+            else:
+                return Mock()
+
+        self.write_patcher = patch.object(self.console, "write", side_effect=my_write)
+        self.write_mock = self.write_patcher.start()
+
+    def tearDown(self):
+        Bf3TestCase.tearDown(self)
+        self.write_patcher.stop()
 
     def count_teams(self):
         clients_teams = [c.teamId for c in self.console.clients.getList()]

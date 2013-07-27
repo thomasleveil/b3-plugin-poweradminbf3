@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 import time
 from mock import patch
+from mockito import when, verify
 from b3.config import CfgConfigParser
 from b3.parsers.frostbite2.protocol import CommandFailedError
 from poweradminbf3 import Poweradminbf3Plugin
@@ -20,16 +21,15 @@ serverreboot: 100
 
 
     def test_nominal(self, sleep_mock):
-        self.console.write.expect(('admin.shutDown',))
+        when(self.console).write()
         self.superadmin.connects("god")
         self.superadmin.says("!serverreboot")
-        self.console.write.verify_expected_calls()
+        verify(self.console).write(('admin.shutDown',))
 
     def test_frostbite_error(self, sleep_mock):
-        self.console.write.expect(('admin.shutDown',)).thenRaise(CommandFailedError(['fOO']))
+        when(self.console).write(('admin.shutDown',)).thenRaise(CommandFailedError(['fOO']))
         self.superadmin.connects("god")
         self.superadmin.message_history = []
         self.superadmin.says("!serverreboot")
-        self.console.write.verify_expected_calls()
         self.assertEqual(['Error: fOO'], self.superadmin.message_history)
 
