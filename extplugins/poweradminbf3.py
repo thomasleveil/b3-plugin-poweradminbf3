@@ -1330,7 +1330,7 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
             self._configmanager = self.config.getboolean('configmanager', 'status')
             self.debug('Configmanager: %s' % self._configmanager)
         except Exception, err:
-            self.debug('Unable to load configmanager status from config file, disabling it', err)
+            self.debug('Unable to load configmanager status from config file, disabling it', exc_info=err)
             self._configmanager = False
 
     def _load_yell_duration(self):
