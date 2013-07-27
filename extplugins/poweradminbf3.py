@@ -1549,17 +1549,17 @@ class Poweradminbf3Plugin(Plugin, vip_commands_mixin):
         """
         if os.path.isfile(self._configManager_configPath + os.path.sep + self._next_typeandmap + '.cfg'): # b3_<gametype>_<mapname>.cfg
             _fName = self._configManager_configPath + os.path.sep + self._next_typeandmap + '.cfg'
-            self.debug('Executing %s.cfg' %(self._next_typeandmap))
+            self.info('Executing %s.cfg' %(self._next_typeandmap))
             self._load_server_config_from_file(client=None, config_name=self._next_typeandmap, file_path=_fName, threaded=True)
 
         elif os.path.isfile(self._configManager_configPath + os.path.sep + self._next_gametype + '.cfg'): # b3_<gametype>.cfg
             _fName = self._configManager_configPath + os.path.sep + self._next_gametype + '.cfg'
-            self.debug('Executing %s.cfg' %(self._next_gametype))
+            self.info('Executing %s.cfg' %(self._next_gametype))
             self._load_server_config_from_file(client=None, config_name=self._next_gametype, file_path=_fName, threaded=True)
 
         elif os.path.isfile(self._configManager_configPath + os.path.sep + 'b3_main.cfg'): # b3_main.cfg
             _fName = self._configManager_configPath + os.path.sep + 'b3_main.cfg'
-            self.debug('Executing b3_main.cfg')
+            self.info('Executing b3_main.cfg')
             self._load_server_config_from_file(client=None, config_name='b3_main.cfg', file_path=_fName, threaded=True)
 
         else:
